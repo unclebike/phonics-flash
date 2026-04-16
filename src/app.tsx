@@ -1,9 +1,9 @@
 import { signal, computed } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
 import { Button, ButtonStyles } from './ui/components/Button';
 import { CardStyles } from './ui/components/Card';
 import { SparkleStyles } from './ui/components/Sparkle';
 import { LearnMode } from './stages/learn/index';
+import { WorldRoute } from './world/index';
 import './stages/learn/learn.css';
 
 // ---- Inject component styles ----
@@ -26,15 +26,19 @@ if (typeof window !== 'undefined') {
 }
 
 interface RouteMatch {
-  page: 'home' | 'learn';
+  page: 'home' | 'learn' | 'world';
   zoneId?: string;
 }
 
 const currentRoute = computed((): RouteMatch => {
   const hash = route.value;
 
-  // #/learn/2 or #/learn
-  const learnMatch = hash.match(/^#\/learn(?:\/(\d+))?$/);
+  if (hash === '#/world' || hash.startsWith('#/world/')) {
+    return { page: 'world' };
+  }
+
+  // #/learn/<zoneId> or #/learn
+  const learnMatch = hash.match(/^#\/learn(?:\/([\w-]+))?$/);
   if (learnMatch) {
     return { page: 'learn', zoneId: learnMatch[1] || '1' };
   }
@@ -47,11 +51,15 @@ const currentRoute = computed((): RouteMatch => {
 export function App() {
   const r = currentRoute.value;
 
+  if (r.page === 'world') {
+    return <WorldRoute />;
+  }
+
   if (r.page === 'learn') {
     return (
       <LearnMode
         zoneId={r.zoneId}
-        onBack={() => { window.location.hash = '#/'; }}
+        onBack={() => { window.location.hash = '#/world'; }}
       />
     );
   }
@@ -65,9 +73,9 @@ export function App() {
       </p>
       <Button
         variant="primary"
-        onClick={() => { window.location.hash = '#/learn/1'; }}
+        onClick={() => { window.location.hash = '#/world'; }}
       >
-        Start Learning
+        Start your journey
       </Button>
     </main>
   );

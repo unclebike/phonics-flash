@@ -10,12 +10,16 @@
 import { ButtonStyles } from './components/Button';
 import { CardStyles } from './components/Card';
 import { SparkleStyles } from './components/Sparkle';
+import { ProgressRingStyles } from './components/ProgressRing';
+import { MeterStyles } from './components/Meter';
 import { SrOnlyStyles } from '../a11y/sr-only';
 
 const ALL_STYLES = [
   ButtonStyles,
   CardStyles,
   SparkleStyles,
+  ProgressRingStyles,
+  MeterStyles,
   SrOnlyStyles,
 ].join('\n');
 
