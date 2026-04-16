@@ -1,0 +1,238 @@
+/* ==========================================================================
+   Learn Mode Styles
+   ========================================================================== */
+
+.learn-session {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: var(--space-5) var(--space-4);
+  gap: var(--space-5);
+}
+
+/* ---- Progress bar ---- */
+
+.learn-progress {
+  width: 100%;
+  height: 8px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.learn-progress__fill {
+  height: 100%;
+  background-color: var(--color-success);
+  border-radius: var(--radius-full);
+  transition: width var(--duration-normal) var(--ease-out);
+}
+
+/* ---- Counter ---- */
+
+.learn-counter {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+}
+
+/* ---- Card area — fixed height to prevent layout shift ---- */
+
+.learn-card-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  flex: 1;
+  width: 100%;
+  min-height: 320px;
+}
+
+.learn-card-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Prompts inside card ---- */
+
+.learn-prompt {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-top: var(--space-2);
+}
+
+.learn-prompt--success {
+  color: var(--color-success);
+}
+
+.learn-prompt--gentle {
+  color: var(--color-text);
+}
+
+.learn-examples {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.learn-help-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* ---- Help panel ---- */
+
+.learn-help-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.learn-help-panel__phoneme {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.learn-help-panel__examples {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+
+/* ---- Response buttons ---- */
+
+.learn-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 300px;
+}
+
+.learn-actions .btn {
+  width: 100%;
+}
+
+/* ---- Streak indicator ---- */
+
+.learn-streak {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--color-reward);
+  text-align: center;
+  animation: streak-pop var(--duration-normal) var(--ease-spring);
+}
+
+@keyframes streak-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ---- Summary screen ---- */
+
+.learn-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  flex: 1;
+  text-align: center;
+}
+
+.learn-summary__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  color: var(--color-text);
+}
+
+.learn-summary__stars {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.learn-summary__star {
+  font-size: var(--text-2xl);
+  color: var(--color-text-muted);
+  opacity: 0.3;
+  transition: color var(--duration-normal) var(--ease-out),
+              opacity var(--duration-normal) var(--ease-out);
+}
+
+.learn-summary__star--earned {
+  color: var(--color-reward);
+  opacity: 1;
+}
+
+.learn-summary__score {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.learn-summary__streak {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+
+.learn-summary__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  width: 100%;
+  max-width: 280px;
+}
+
+.learn-summary__actions .btn {
+  width: 100%;
+}
+
+/* ---- Landing page ---- */
+
+.learn-landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  min-height: 80vh;
+  text-align: center;
+}
+
+.learn-landing__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+  color: var(--color-text);
+}
+
+.learn-landing__subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+  max-width: 40ch;
+}
+
+/* ---- Reduced motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .learn-streak {
+    animation: none;
+  }
+}
