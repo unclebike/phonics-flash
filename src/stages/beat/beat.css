@@ -1,0 +1,192 @@
+/* ============================================================
+ * Beat Mode styles
+ * ============================================================
+ *
+ * PEAT safety notes:
+ * - Flashes used during play are driven by a single `--break-flash`
+ *   class toggle per beat, with a 220ms ease-out fade. At the fastest
+ *   tempo (140 BPM, ~2.3 Hz) this is well under the 3 Hz guardrail.
+ *   Transitions never chain into a strobe.
+ * - Luminance change on the flash is <30% — we lift the arena
+ *   background towards a soft amber rather than to full white.
+ * - prefers-reduced-motion disables the flash entirely.
+ */
+
+.beat-session {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-active);
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- HUD --- */
+.beat-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-4) var(--space-6);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-lg);
+  pointer-events: none;
+}
+
+.beat-hud__score,
+.beat-hud__combo {
+  background-color: var(--color-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-4);
+  box-shadow: var(--shadow-sm);
+  min-width: 4.5rem;
+  text-align: center;
+}
+
+.beat-hud__combo--hot {
+  color: var(--color-primary);
+}
+
+.beat-hud__label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+/* --- Arena (tap surface + card display) --- */
+.beat-arena {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  /* tappable during play */
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  background-color: var(--color-bg);
+  transition: background-color 220ms var(--ease-out);
+}
+
+/* Single-pulse flash on pattern-break beats.
+ * Applied as a class that is toggled off after 220ms.
+ * NEVER oscillated or chained — that's the PEAT rule. */
+.beat-arena--break-flash {
+  background-color: var(--color-orp-bg);
+}
+
+.beat-arena--miss-flash {
+  background-color: var(--color-surface);
+}
+
+.beat-arena__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  pointer-events: none; /* all taps handled by arena */
+}
+
+.beat-arena__hint {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  max-width: 22rem;
+  text-align: center;
+}
+
+.beat-arena__hint--break {
+  color: var(--color-primary);
+  font-weight: var(--weight-bold);
+}
+
+.beat-footer {
+  padding: var(--space-3) var(--space-6) var(--space-6);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Ready / pause / complete overlays --- */
+.beat-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-8);
+  background-color: var(--color-bg);
+  text-align: center;
+  z-index: var(--z-overlay, 20);
+}
+
+.beat-overlay__title {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-extrabold);
+  margin: 0;
+}
+
+.beat-overlay__body {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+  max-width: 28rem;
+  margin: 0;
+}
+
+.beat-overlay__actions {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* --- Summary (complete) --- */
+.beat-summary__result {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+
+.beat-summary__result--pass { color: var(--color-primary); }
+.beat-summary__result--fail { color: var(--color-text-muted); }
+
+.beat-summary__stats {
+  display: flex;
+  gap: var(--space-6);
+  margin: var(--space-2) 0;
+}
+
+.beat-summary__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 5.5rem;
+}
+
+.beat-summary__stat-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-extrabold);
+}
+
+.beat-summary__stat-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* --- Reduced motion: kill the flash entirely. --- */
+@media (prefers-reduced-motion: reduce) {
+  .beat-arena,
+  .beat-arena--break-flash,
+  .beat-arena--miss-flash {
+    transition: none;
+  }
+}

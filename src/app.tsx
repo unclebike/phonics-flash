@@ -3,8 +3,10 @@ import { Button, ButtonStyles } from './ui/components/Button';
 import { CardStyles } from './ui/components/Card';
 import { SparkleStyles } from './ui/components/Sparkle';
 import { LearnMode } from './stages/learn/index';
+import { BossLevel } from './stages/beat/index';
 import { WorldRoute } from './world/index';
 import './stages/learn/learn.css';
+import './stages/beat/beat.css';
 
 // ---- Inject component styles ----
 // Components export CSS strings; inject them once at app level.
@@ -26,7 +28,7 @@ if (typeof window !== 'undefined') {
 }
 
 interface RouteMatch {
-  page: 'home' | 'learn' | 'world';
+  page: 'home' | 'learn' | 'world' | 'beat';
   zoneId?: string;
 }
 
@@ -37,10 +39,16 @@ const currentRoute = computed((): RouteMatch => {
     return { page: 'world' };
   }
 
+  // #/beat/<zoneId>
+  const beatMatch = hash.match(/^#\/beat\/([\w-]+)$/);
+  if (beatMatch) {
+    return { page: 'beat', zoneId: beatMatch[1] };
+  }
+
   // #/learn/<zoneId> or #/learn
   const learnMatch = hash.match(/^#\/learn(?:\/([\w-]+))?$/);
   if (learnMatch) {
-    return { page: 'learn', zoneId: learnMatch[1] || '1' };
+    return { page: 'learn', zoneId: learnMatch[1] || 'whispering-meadows' };
   }
 
   return { page: 'home' };
@@ -58,6 +66,15 @@ export function App() {
   if (r.page === 'learn') {
     return (
       <LearnMode
+        zoneId={r.zoneId}
+        onBack={() => { window.location.hash = '#/world'; }}
+      />
+    );
+  }
+
+  if (r.page === 'beat' && r.zoneId) {
+    return (
+      <BossLevel
         zoneId={r.zoneId}
         onBack={() => { window.location.hash = '#/world'; }}
       />
