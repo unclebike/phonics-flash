@@ -1,59 +1,46 @@
 # PROGRESS.md — Agent Status
 
-**Current Milestone:** M1 · Foundation
+**Current Milestone:** M2 complete → M3 next
 **Last Updated:** 2026-04-16
 
 ---
 
 ## Foundation Agent
-**Status:** M1 code complete — awaiting npm install + test verification
-**Shipped:**
-- package.json with Preact + Vite + TypeScript + Vitest + idb-keyval
-- tsconfig.json (strict, Preact JSX)
-- vite.config.ts with @preact/preset-vite
-- Preact app entry (index.html, src/index.tsx, src/app.tsx)
-- RsvpEngine with ORP, variable duration (all 5 rules), spaced-repetition scheduler
-- Persistence adapter (idb-keyval based)
-- 22 Vitest unit tests for RsvpEngine
-- PWA manifest + service worker
-- CI workflow with Jolly grep-ban
-- Cloudflare Pages config (wrangler.toml, _routes.json)
-**Blocked:** npm install needed (disk space was constrained during agent run)
-**Next:** Install deps, run tests, verify build, verify Lighthouse PWA score.
+**Status:** M1 complete, deployed to production
+**Shipped:** Preact+Vite scaffold, RsvpEngine (ORP, variable duration, scheduler), PersistenceAdapter, PWA (manifest + SW + icons), CI with Jolly grep-ban, Cloudflare Pages config.
+**Next:** M4 audio clock for Beat Mode.
 
 ## UI/Design Agent
-**Status:** M1 code complete — awaiting integration verification
-**Shipped:**
-- Design tokens (tokens.css) — colors, typography, spacing, motion, themes
-- Global stylesheet (global.css)
-- Button component (primary/secondary/ghost, lg/md sizes, 44px+ touch targets)
-- Card component (RSVP display with ORP highlighting, aria-live)
-- Sparkle component (reward animation, motion-safe)
-- A11y motion utilities (reduced motion signal, safeDuration)
-- A11y font toggle (dyslexia font mode with localStorage persistence)
-- A11y screen reader component (SrOnly)
-- A11y contrast utilities (theme + high-contrast with OS pref detection)
-- Barrel exports for ui/components and a11y
-**Blocked:** No
-**Next:** Font files (OpenDyslexic woff2) need sourcing. Remaining components (Modal, Meter, Streak) are M2+.
+**Status:** M1 complete
+**Shipped:** Design tokens (CSS custom properties), global stylesheet, Button/Card/Sparkle, a11y foundations (motion, fonts, contrast, sr-only).
+**Next:** M3 world map components (Zone, Avatar), remaining primitives (Modal, Meter, Streak).
 
 ## Content Agent
-**Status:** Not started
-**Next:** Awaiting M2 start. Can pre-work on phonics sequence JSON.
+**Status:** M2 complete
+**Shipped:** 42-grapheme PHONICS_DATA (Sets 1-7), ContentManifest with 7 zones + 3 avatar tiers, Web Speech service (en-GB), 15 Vitest tests + Jolly linter.
+**Next:** Zone/avatar asset production for M3; human audio recording pipeline (stretch).
 
 ## Learn Mode Agent
-**Status:** Not started
-**Blocked:** Needs verified RsvpEngine + design tokens
-**Next:** Awaiting M2 start.
+**Status:** M2 complete
+**Shipped:** LearnSession component with showing/responding/feedback/complete phases, RSVP timing, ORP highlighting, tap-to-advance, gentle retry, mastery persistence to IndexedDB, star summary, hash routing.
+**Next:** Speech recognition feature flag (stretch, V1 optional).
 
 ## Beat Mode Agent
 **Status:** Not started
-**Next:** Awaiting M4 start.
+**Next:** M4 — audio clock integration, pattern-break mechanic, boss levels.
 
 ## World Agent
 **Status:** Not started
-**Next:** Awaiting M3 start.
+**Next:** M3 — world map, 3 zones rendered, avatar with tier transitions, unlock state machine.
 
 ## API/Worker Agent
 **Status:** Not started
-**Next:** Can begin D1 schema + Worker scaffold after M1 verification.
+**Next:** Schema migrations + /api/manifest/version + telemetry endpoint. Can proceed independently.
+
+---
+
+## Production
+- Repo: https://github.com/unclebike/phonics-flash
+- Live: https://phonics-flash.pages.dev
+- Tests: 40/40 passing
+- Bundle: 13.87 KB JS + 2.47 KB CSS gzipped (under 150 KB budget)
