@@ -1,4 +1,6 @@
 import { render } from 'preact';
+import './ui/tokens.css';
+import './ui/global.css';
 import { App } from './app';
 
 const root = document.getElementById('app');
