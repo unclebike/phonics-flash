@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/preact';
+import { render, screen, cleanup, act } from '@testing-library/preact';
 import { BeatSession } from '../BeatSession';
 import type { BeatClock } from '../../../audio/beat-clock';
 import { PHONICS_DATA } from '../../../content/phonics';
 
-/** Minimal in-memory clock stub: lets tests control beat firing and audio time. */
+/** Minimal in-memory clock stub. */
 function makeStubClock(): BeatClock & { fire: (i: number) => void; setTime: (t: number) => void } {
   let listeners: ((i: number, t: number) => void)[] = [];
   let time = 0;
@@ -27,7 +27,7 @@ function makeStubClock(): BeatClock & { fire: (i: number) => void; setTime: (t: 
   };
 }
 
-describe('BeatSession', () => {
+describe('BeatSession (ADR-007 teacher-judged)', () => {
   beforeEach(() => {
     cleanup();
   });
@@ -35,30 +35,9 @@ describe('BeatSession', () => {
   const items = PHONICS_DATA.filter((p) => p.set === 1);
 
   it('renders the ready overlay with a Start button', () => {
-    render(
-      <BeatSession
-        items={items}
-        tempo="slow"
-        length={10}
-        requiredScore={7}
-      />,
-    );
+    render(<BeatSession items={items} tempo="slow" length={10} />);
     expect(screen.getByText(/Boss Level/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /start/i })).toBeTruthy();
-  });
-
-  it('shows required score in the ready overlay', () => {
-    render(
-      <BeatSession
-        items={items}
-        tempo="slow"
-        length={10}
-        requiredScore={7}
-      />,
-    );
-    // The literal "7" appears inside a <strong>
-    const overlay = screen.getByRole('main');
-    expect(overlay.textContent).toContain('7');
   });
 
   it('advances to the playing phase when Start is tapped', async () => {
@@ -68,34 +47,42 @@ describe('BeatSession', () => {
         items={items}
         tempo="slow"
         length={8}
-        requiredScore={5}
         clockFactory={() => clock}
       />,
     );
-    const startBtn = screen.getByRole('button', { name: /start/i });
-    startBtn.click();
+    await act(async () => {
+      screen.getByRole('button', { name: /start/i }).click();
+    });
 
-    // After start, the tappable arena appears. findBy* waits for it.
-    const arena = await screen.findByLabelText(/Tap on pattern-break beats/i);
+    const arena = await screen.findByLabelText(/Beat sequence in progress/i);
     expect(arena).toBeTruthy();
   });
 
-  it('ignores arena taps before Start', () => {
+  it('transitions to judging phase when sequence ends (shows teacher buttons)', async () => {
     const clock = makeStubClock();
     render(
       <BeatSession
         items={items}
         tempo="slow"
-        length={8}
-        requiredScore={5}
+        length={3}
         clockFactory={() => clock}
       />,
     );
-    // Arena isn't rendered yet — just the ready overlay.
-    expect(screen.queryByLabelText(/Tap on pattern-break beats/i)).toBeNull();
+    await act(async () => {
+      screen.getByRole('button', { name: /start/i }).click();
+    });
+    await act(async () => {
+      clock.fire(0);
+      clock.fire(1);
+      clock.fire(2);
+      clock.fire(3); // past end -> finishSequence()
+    });
+
+    expect(screen.getByRole('button', { name: /yes.*correct/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeTruthy();
   });
 
-  it('calls onComplete when the sequence ends', () => {
+  it('calls onComplete with passed:true when teacher marks correct', async () => {
     const clock = makeStubClock();
     const onComplete = vi.fn();
     render(
@@ -103,23 +90,50 @@ describe('BeatSession', () => {
         items={items}
         tempo="slow"
         length={3}
-        requiredScore={2}
         clockFactory={() => clock}
         onComplete={onComplete}
       />,
     );
-    screen.getByRole('button', { name: /start/i }).click();
-
-    // Fire beats 0, 1, 2 (the sequence length) and then one more to signal end.
-    clock.fire(0);
-    clock.fire(1);
-    clock.fire(2);
-    clock.fire(3); // past end -> finishSession()
+    await act(async () => {
+      screen.getByRole('button', { name: /start/i }).click();
+    });
+    await act(async () => {
+      clock.fire(0); clock.fire(1); clock.fire(2); clock.fire(3);
+    });
+    await act(async () => {
+      screen.getByRole('button', { name: /yes.*correct/i }).click();
+    });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
     const result = onComplete.mock.calls[0][0];
-    expect(result).toHaveProperty('score');
-    expect(result).toHaveProperty('passed');
-    expect(result).toHaveProperty('bestCombo');
+    expect(result).toHaveProperty('passed', true);
+    expect(result).toHaveProperty('attempts');
+  });
+
+  it('Try again returns to ready, increments attempt counter, does not call onComplete', async () => {
+    const clock = makeStubClock();
+    const onComplete = vi.fn();
+    render(
+      <BeatSession
+        items={items}
+        tempo="slow"
+        length={3}
+        clockFactory={() => clock}
+        onComplete={onComplete}
+      />,
+    );
+    await act(async () => {
+      screen.getByRole('button', { name: /start/i }).click();
+    });
+    await act(async () => {
+      clock.fire(0); clock.fire(1); clock.fire(2); clock.fire(3);
+    });
+    await act(async () => {
+      screen.getByRole('button', { name: /try again/i }).click();
+    });
+
+    expect(screen.getByRole('button', { name: /start again/i })).toBeTruthy();
+    expect(screen.getByText(/Try 2/i)).toBeTruthy();
+    expect(onComplete).not.toHaveBeenCalled();
   });
 });

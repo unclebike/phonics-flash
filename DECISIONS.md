@@ -61,3 +61,23 @@ Append-only. Agents propose. Coordinator ratifies.
 **Context:** Jolly Phonics owns trademarks on their name, characters, action gestures, and songs. We must not infringe.
 **Decision:** CI grep-ban on "Jolly" across all files. No use of known Jolly Phonics character names, gesture descriptions, or song lyrics. Content Agent builds fully original mnemonic system. Content linter blocks known trademarked terms.
 **Consequences:** Content creation is harder — can't lean on existing mnemonics. The result is a genuinely original product. The grep-ban is the automated tripwire.
+
+---
+
+## ADR-007 · Teacher-Assisted Gameplay Model
+
+**Date:** 2026-04-16
+**Status:** Ratified
+**Context:** V1 originally specced the child as their own judge via self-assessment buttons ("I know it!" / "Help me") and auto-scored tap-on-oddball Beat Mode. In practice this game will be played with a teacher (or parent) sitting alongside the child. Teachers know whether a child actually produced the correct phoneme sound — the child does not reliably self-assess, and auto-scoring via speech recognition is unreliable for isolated phonemes and young voices (see TRUTH.md risks).
+**Decision:**
+1. Teacher is the arbiter of correct/incorrect across both Stage 1 and Stage 2.
+2. Per-card UI presents two teacher-facing buttons: "Correct" and "Try again".
+3. Any "Try again" mark restarts the entire session from the first card. Complete all cards correctly in a row to pass the zone.
+4. Self-scoring UI (stars out of 5, numeric streak counters, combo multipliers) is removed. Sparkle remains as a gentle visual "Correct" acknowledgement.
+5. Mastery still persists to IndexedDB — a phoneme is marked mastered only when completed without a restart in its session.
+6. Beat Mode: the pattern plays through; teacher marks pass/fail at the end (or per-beat if we expand later). Fail restarts the sequence.
+**Consequences:**
+- Clearer pedagogy: the teacher's judgment is what moves the child forward, matching real phonics instruction.
+- Restart-on-fail is a true mastery gate. More frustrating-on-paper than self-paced, but the teacher's tone mediates this.
+- Language across the app shifts from child-facing self-assessment ("I know it!") to observational ("Correct"). Tone remains warm; "Try again" not "Wrong".
+- Speech recognition is fully deferred (no longer even a stretch goal for V1).

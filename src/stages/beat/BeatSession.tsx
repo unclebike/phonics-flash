@@ -1,5 +1,5 @@
-import { signal } from '@preact/signals';
-import { useEffect, useRef } from 'preact/hooks';
+import { useSignal } from '@preact/signals';
+import { useEffect, useMemo, useRef } from 'preact/hooks';
 import type { PhonicsItem } from '../../core/types';
 import { createBeatClock, type BeatClock, type Tempo } from '../../audio/beat-clock';
 import { createBeatScheduler, type BeatEvent } from '../../core/beat-scheduler';
@@ -9,31 +9,20 @@ import { Card } from '../../ui/components/Card';
 
 // ---- Types ----
 
-type Phase = 'ready' | 'playing' | 'paused' | 'complete';
+type Phase = 'ready' | 'playing' | 'paused' | 'judging' | 'complete';
 
 export interface BeatSessionProps {
   items: PhonicsItem[];
   tempo: Tempo;
   length: number;
-  requiredScore: number;
+  /** Kept for interface compatibility; unused under ADR-007 teacher model. */
+  requiredScore?: number;
   onBack?: () => void;
-  onComplete?: (result: { score: number; passed: boolean; bestCombo: number }) => void;
-  /** Testing seam: inject a custom clock (otherwise a real Web Audio clock is created). */
+  onComplete?: (result: { passed: boolean; attempts: number }) => void;
+  /** Testing seam: inject a custom clock. */
   clockFactory?: () => BeatClock;
 }
 
-// ---- Module-level signals (stable across renders, reset on mount) ----
-
-const phase = signal<Phase>('ready');
-const currentBeatIndex = signal(0);
-const score = signal(0);
-const combo = signal(0);
-const bestCombo = signal(0);
-const misses = signal(0);
-const sequence = signal<BeatEvent[]>([]);
-
-// Tolerance window for tap hits around a break beat (seconds).
-const TAP_TOLERANCE_SEC = 0.2;
 // Flash duration — single pulse, NO chaining. PEAT-safe.
 const FLASH_MS = 220;
 
@@ -43,41 +32,40 @@ export function BeatSession({
   items,
   tempo,
   length,
-  requiredScore,
   onBack,
   onComplete,
   clockFactory,
 }: BeatSessionProps) {
+  // Compute initial sequence synchronously so it's available on first render
+  // (useEffect runs after render, which is too late for tests that fire beats
+  // immediately after clicking Start).
+  const initialSequence = useMemo(
+    () => createBeatScheduler().generate(items, tempo, length),
+    [items, tempo, length],
+  );
+
+  // Component-scoped signals — reset per instance.
+  const phase = useSignal<Phase>('ready');
+  const currentBeatIndex = useSignal(0);
+  const sequence = useSignal<BeatEvent[]>(initialSequence);
+  const attempts = useSignal(0);
+  const passedFinal = useSignal(false);
+
   const clockRef = useRef<BeatClock | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const missFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const arenaRef = useRef<HTMLDivElement | null>(null);
-
-  // Tracks whether the current break beat has already been tapped.
-  // Cleared each time we advance to a new beat.
-  const breakTappedRef = useRef(false);
-  // Absolute audio time when the current break beat fired; used for the
-  // "miss — break passed without tap" detection via rAF sweep.
-  const currentBreakFiredAtRef = useRef<number | null>(null);
-  const rafRef = useRef<number | null>(null);
-
   const completeCalledRef = useRef(false);
 
-  // --- Setup: reset session state on mount / items change. ---
+  // --- Reset session state when props change (after first mount). ---
   useEffect(() => {
-    const scheduler = createBeatScheduler();
-    sequence.value = scheduler.generate(items, tempo, length);
+    sequence.value = initialSequence;
     phase.value = 'ready';
     currentBeatIndex.value = 0;
-    score.value = 0;
-    combo.value = 0;
-    bestCombo.value = 0;
-    misses.value = 0;
-    breakTappedRef.current = false;
-    currentBreakFiredAtRef.current = null;
+    attempts.value = 0;
+    passedFinal.value = false;
     completeCalledRef.current = false;
-  }, [items, tempo, length]);
+  }, [initialSequence]);
 
   // --- Teardown on unmount. ---
   useEffect(() => {
@@ -85,8 +73,6 @@ export function BeatSession({
       if (unsubRef.current) { unsubRef.current(); unsubRef.current = null; }
       if (clockRef.current) { clockRef.current.stop(); clockRef.current = null; }
       if (flashTimerRef.current) { clearTimeout(flashTimerRef.current); flashTimerRef.current = null; }
-      if (missFlashTimerRef.current) { clearTimeout(missFlashTimerRef.current); missFlashTimerRef.current = null; }
-      if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     };
   }, []);
 
@@ -102,34 +88,6 @@ export function BeatSession({
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
-  // --- rAF sweep to catch "miss — break beat passed without tap". ---
-  useEffect(() => {
-    if (phase.value !== 'playing') {
-      if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-      return;
-    }
-    const clock = clockRef.current;
-    if (!clock) return;
-
-    const tick = () => {
-      const firedAt = currentBreakFiredAtRef.current;
-      if (firedAt != null && !breakTappedRef.current) {
-        const now = clock.getAudioTime();
-        if (now - firedAt > TAP_TOLERANCE_SEC) {
-          // Miss: break beat expired without a tap. No harsh feedback — just reset combo.
-          combo.value = 0;
-          misses.value += 1;
-          currentBreakFiredAtRef.current = null;
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-    };
-  }, [phase.value]);
-
   // --- Start (first user gesture, unlocks AudioContext on iOS). ---
   const handleStart = () => {
     if (!clockRef.current) {
@@ -137,37 +95,27 @@ export function BeatSession({
     }
     const clock = clockRef.current;
 
-    // Subscribe fresh (discard any prior subscription).
     if (unsubRef.current) unsubRef.current();
     unsubRef.current = clock.onBeat((beatIndex) => {
       onBeatFired(beatIndex);
     });
 
+    attempts.value += 1;
     phase.value = 'playing';
     currentBeatIndex.value = 0;
     clock.start(tempo);
   };
 
-  // --- On each beat fired by the clock. ---
   const onBeatFired = (beatIndex: number) => {
     const seq = sequence.value;
     if (beatIndex >= seq.length) {
-      // Sequence done.
-      finishSession();
+      finishSequence();
       return;
     }
-
     currentBeatIndex.value = beatIndex;
-    breakTappedRef.current = false;
 
     const event = seq[beatIndex];
-    if (event.isBreak) {
-      const clock = clockRef.current;
-      currentBreakFiredAtRef.current = clock ? clock.getAudioTime() : 0;
-      triggerBreakFlash();
-    } else {
-      currentBreakFiredAtRef.current = null;
-    }
+    if (event.isBreak) triggerBreakFlash();
   };
 
   const triggerBreakFlash = () => {
@@ -180,48 +128,28 @@ export function BeatSession({
     }, FLASH_MS);
   };
 
-  const triggerMissFlash = () => {
-    const el = arenaRef.current;
-    if (!el) return;
-    el.classList.add('beat-arena--miss-flash');
-    if (missFlashTimerRef.current) clearTimeout(missFlashTimerRef.current);
-    missFlashTimerRef.current = setTimeout(() => {
-      el.classList.remove('beat-arena--miss-flash');
-    }, FLASH_MS);
-  };
-
-  // --- Tap handling. ---
-  const handleArenaTap = () => {
-    if (phase.value !== 'playing') return;
-    const clock = clockRef.current;
-    if (!clock) return;
-
-    const firedAt = currentBreakFiredAtRef.current;
-    const now = clock.getAudioTime();
-
-    if (firedAt != null && !breakTappedRef.current && (now - firedAt) <= TAP_TOLERANCE_SEC) {
-      // Hit!
-      breakTappedRef.current = true;
-      currentBreakFiredAtRef.current = null;
-      score.value += 1;
-      combo.value += 1;
-      if (combo.value > bestCombo.value) bestCombo.value = combo.value;
-    } else {
-      // False tap or outside window: reset combo, gentle miss flash.
-      combo.value = 0;
-      misses.value += 1;
-      triggerMissFlash();
-    }
-  };
-
-  const finishSession = () => {
-    if (completeCalledRef.current) return;
-    completeCalledRef.current = true;
+  // --- Sequence finished — hand over to teacher. ---
+  const finishSequence = () => {
     if (unsubRef.current) { unsubRef.current(); unsubRef.current = null; }
     clockRef.current?.stop();
+    phase.value = 'judging';
+  };
+
+  // --- Teacher: Correct → pass, unlock zone, go home. ---
+  const handleCorrect = () => {
+    if (completeCalledRef.current) return;
+    completeCalledRef.current = true;
+    passedFinal.value = true;
     phase.value = 'complete';
-    const passed = score.value >= requiredScore;
-    onComplete?.({ score: score.value, passed, bestCombo: bestCombo.value });
+    onComplete?.({ passed: true, attempts: attempts.value });
+  };
+
+  // --- Teacher: Try again → restart from beat 0. ---
+  const handleTryAgain = () => {
+    phase.value = 'ready';
+    currentBeatIndex.value = 0;
+    completeCalledRef.current = false;
+    // attempts.value is NOT reset — it increments next Start.
   };
 
   const handleResume = () => {
@@ -252,14 +180,16 @@ export function BeatSession({
         <div class="beat-overlay">
           <h1 class="beat-overlay__title">Boss Level</h1>
           <p class="beat-overlay__body">
-            Watch the beat. When the arena flashes, tap anywhere as fast as you can!
+            Watch the beat together. Say each sound out loud as it appears.
           </p>
-          <p class="beat-overlay__body">
-            Hit <strong>{requiredScore}</strong> to win.
-          </p>
+          {attempts.value > 0 && (
+            <p class="beat-overlay__body">
+              <em>Try {attempts.value + 1}</em>
+            </p>
+          )}
           <div class="beat-overlay__actions">
             <Button variant="primary" onClick={handleStart}>
-              Start
+              {attempts.value === 0 ? 'Start' : 'Start again'}
             </Button>
             {onBack && (
               <Button variant="ghost" onClick={onBack}>
@@ -272,39 +202,21 @@ export function BeatSession({
     );
   }
 
-  // Complete overlay
-  if (p === 'complete') {
-    const passed = score.value >= requiredScore;
+  // Judging overlay — teacher decides pass/fail
+  if (p === 'judging') {
     return (
-      <div class="beat-session" role="main" aria-label="Beat mode complete">
+      <div class="beat-session" role="main" aria-label="Teacher judgment">
         <div class="beat-overlay">
-          <h1 class="beat-overlay__title">
-            {passed ? 'You beat the boss!' : 'So close!'}
-          </h1>
-          <p
-            class={`beat-summary__result ${
-              passed ? 'beat-summary__result--pass' : 'beat-summary__result--fail'
-            }`}
-          >
-            {passed ? 'Zone unlocked.' : `You needed ${requiredScore} to pass.`}
+          <h1 class="beat-overlay__title">All done!</h1>
+          <p class="beat-overlay__body">
+            Did they make it through all the sounds?
           </p>
-          <div class="beat-summary__stats">
-            <div class="beat-summary__stat">
-              <span class="beat-summary__stat-value">{score.value}</span>
-              <span class="beat-summary__stat-label">Hits</span>
-            </div>
-            <div class="beat-summary__stat">
-              <span class="beat-summary__stat-value">{bestCombo.value}</span>
-              <span class="beat-summary__stat-label">Best combo</span>
-            </div>
-            <div class="beat-summary__stat">
-              <span class="beat-summary__stat-value">{misses.value}</span>
-              <span class="beat-summary__stat-label">Misses</span>
-            </div>
-          </div>
-          <div class="beat-overlay__actions">
-            <Button variant="primary" onClick={onBack ?? (() => { window.location.hash = '#/world'; })}>
-              Back to world
+          <div class="beat-overlay__actions" aria-label="Teacher response">
+            <Button variant="primary" onClick={handleCorrect}>
+              Yes — correct
+            </Button>
+            <Button variant="ghost" onClick={handleTryAgain}>
+              Try again
             </Button>
           </div>
         </div>
@@ -312,39 +224,43 @@ export function BeatSession({
     );
   }
 
-  // Playing / paused — shared arena scaffolding.
+  // Complete overlay — after teacher confirms pass
+  if (p === 'complete') {
+    return (
+      <div class="beat-session" role="main" aria-label="Beat mode complete">
+        <div class="beat-overlay">
+          <h1 class="beat-overlay__title">You beat the boss!</h1>
+          <p class="beat-summary__result beat-summary__result--pass">
+            Zone unlocked.
+          </p>
+          {attempts.value > 1 && (
+            <p class="beat-overlay__body">
+              <em>Took {attempts.value} tries — way to stick with it.</em>
+            </p>
+          )}
+          <div class="beat-overlay__actions">
+            <Button
+              variant="primary"
+              onClick={onBack ?? (() => { window.location.hash = '#/world'; })}
+            >
+              Back to the map
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Playing / paused
   const currentItem = activeEvent?.item ?? (total > 0 ? seq[idx].item : null);
   const orp = currentItem ? computeORP(currentItem.grapheme) : 0;
 
   return (
     <div class="beat-session" role="main" aria-label="Beat mode playing">
-      <div class="beat-hud" aria-hidden="false">
-        <div class="beat-hud__score" aria-live="polite">
-          <span class="beat-hud__label">Score</span>
-          {score.value}
-        </div>
-        <div
-          class={`beat-hud__combo ${combo.value >= 3 ? 'beat-hud__combo--hot' : ''}`}
-          aria-live="polite"
-        >
-          <span class="beat-hud__label">Combo</span>
-          {combo.value}
-        </div>
-      </div>
-
       <div
         ref={arenaRef}
         class="beat-arena"
-        role="button"
-        tabIndex={0}
-        aria-label="Tap on pattern-break beats"
-        onClick={handleArenaTap}
-        onKeyDown={(e) => {
-          if (e.key === ' ' || e.key === 'Enter') {
-            e.preventDefault();
-            handleArenaTap();
-          }
-        }}
+        aria-label="Beat sequence in progress"
       >
         <div class="beat-arena__inner">
           {currentItem && (
@@ -354,12 +270,8 @@ export function BeatSession({
               isActive={p === 'playing'}
             />
           )}
-          <p
-            class={`beat-arena__hint ${
-              activeEvent?.isBreak ? 'beat-arena__hint--break' : ''
-            }`}
-          >
-            {activeEvent?.isBreak ? 'Tap now!' : 'Watch the beat...'}
+          <p class="beat-arena__hint">
+            {activeEvent?.isBreak ? 'New sound!' : 'Say it out loud'}
           </p>
         </div>
       </div>
