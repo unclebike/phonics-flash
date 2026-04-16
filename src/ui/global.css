@@ -12,7 +12,6 @@
    falls back to Atkinson Hyperlegible (Google Fonts) then system sans.
    ----------------------------------------------------------------------- */
 
-/* Uncomment when font files are placed in /public/fonts/
 @font-face {
   font-family: 'OpenDyslexic';
   src: url('/fonts/OpenDyslexic-Regular.woff2') format('woff2');
@@ -27,7 +26,6 @@
   font-style: normal;
   font-display: swap;
 }
-*/
 
 /* -----------------------------------------------------------------------
    RESET — minimal, targeted

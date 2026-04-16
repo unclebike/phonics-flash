@@ -1,84 +1,52 @@
 # Fonts
 
 The design system offers a dyslexia-friendly font toggle. The primary
-choice is **OpenDyslexic**; the project does not bundle the font files
-(they are binary assets under a license distinct from ours) so they need
-to be sourced once per fork.
+choice is **OpenDyslexic** and the font files are **bundled in this
+repo** under `public/fonts/` along with the OFL license text.
 
-Until the files are dropped in, `[data-font="dyslexia"]` falls through to
-**Atkinson Hyperlegible** (via Google Fonts) and then to system sans-serif.
-Nothing visually breaks in the meantime — the toggle simply has a smaller
-effect than it will once OpenDyslexic is in place.
+OpenDyslexic is licensed under the SIL Open Font License 1.1, which
+explicitly permits redistribution, so forks inherit the fonts with no
+action required.
 
-## Where to download
+## Sources
 
 - Upstream site: <https://opendyslexic.org/>
 - GitHub source: <https://github.com/antijingoist/opendyslexic>
-- License: [SIL Open Font License 1.1](https://scripts.sil.org/OFL)
-  — compatible with our MIT licensing.
+- Release used: **v0.91.12** (2019-10-17)
+- License: [SIL Open Font License 1.1](https://scripts.sil.org/OFL) —
+  compatible with our MIT licensing. Full text in `public/fonts/OFL.txt`.
 
-Grab the latest `.woff2` release assets. You need:
+The shipped files are `Regular.woff2` and `Bold.woff2` only (~235 KB
+total). Italic and mono variants are not wired.
 
-- `OpenDyslexic-Regular.woff2`
-- `OpenDyslexic-Bold.woff2`
-
-(The italic and mono variants are not currently referenced by the design
-tokens. Add them if and when a use case comes up.)
-
-## Where to place them
-
-Both files go under `public/fonts/` at the repo root:
+## File layout
 
 ```
 public/
 └── fonts/
+    ├── OFL.txt                     — license text (required by OFL)
     ├── OpenDyslexic-Regular.woff2
     └── OpenDyslexic-Bold.woff2
 ```
 
-Vite serves `public/` verbatim, so the final served paths will be
+Vite serves `public/` verbatim, so the runtime paths are
 `/fonts/OpenDyslexic-Regular.woff2` and `/fonts/OpenDyslexic-Bold.woff2`.
-
-## Wiring the CSS
-
-Open `src/ui/global.css` and uncomment the `@font-face` block at the top
-of the file (currently between the `NOTE:` comment and the reset, lines
-~15-30). It should become:
-
-```css
-@font-face {
-  font-family: 'OpenDyslexic';
-  src: url('/fonts/OpenDyslexic-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'OpenDyslexic';
-  src: url('/fonts/OpenDyslexic-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-```
-
-No other file needs to change — `--font-dyslexia` in `tokens.css` already
-points at the `'OpenDyslexic'` family with Atkinson Hyperlegible as its
-fallback.
+The `@font-face` declarations live in `src/ui/global.css`.
 
 ## Verifying
 
 1. `npm run dev`
-2. In the browser, set `document.documentElement.dataset.font = 'dyslexia'`
-   from the console (or use whatever settings UI the app exposes).
-3. Inspect a block of body text in DevTools → Computed → `font-family`.
-   It should resolve to `OpenDyslexic` rather than `Atkinson Hyperlegible`.
-4. Confirm the font loads from `/fonts/…woff2` in the Network panel with
-   a 200 response.
+2. In the browser console:
+   `document.documentElement.dataset.font = 'dyslexia'`
+3. DevTools → Computed → `font-family` should resolve to `OpenDyslexic`.
+4. Network panel: woff2 files should 200.
 
-## Do NOT commit the font files blindly
+## Refreshing the fonts
 
-The OFL allows redistribution, but the binary assets bloat the repo and
-duplicate what the OpenDyslexic project already hosts. Prefer to fetch
-them at build or deploy time, or commit them once on your own fork after
-confirming your distribution plan.
+To bump to a newer OpenDyslexic release:
+
+```bash
+curl -LO https://github.com/antijingoist/opendyslexic/releases/download/<tag>/<release>.zip
+unzip -j -o <release>.zip "OpenDyslexic-Regular.woff2" "OpenDyslexic-Bold.woff2" -d public/fonts/
+curl -sL https://raw.githubusercontent.com/antijingoist/opendyslexic/main/OFL.txt -o public/fonts/OFL.txt
+```
