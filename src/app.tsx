@@ -3,13 +3,16 @@ import { Button, ButtonStyles } from './ui/components/Button';
 import { CardStyles } from './ui/components/Card';
 import { SparkleStyles } from './ui/components/Sparkle';
 import { LearnMode } from './stages/learn/index';
+import { DrillSession } from './stages/learn/DrillSession';
 import { BossLevel } from './stages/beat/index';
 import { WorldRoute } from './world/index';
+import { TeacherPanel } from './stages/teacher/TeacherPanel';
 import './stages/learn/learn.css';
+import './stages/learn/drill.css';
 import './stages/beat/beat.css';
+import './stages/teacher/teacher.css';
 
 // ---- Inject component styles ----
-// Components export CSS strings; inject them once at app level.
 const styleSheet = [ButtonStyles, CardStyles, SparkleStyles].join('\n');
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
@@ -27,25 +30,35 @@ if (typeof window !== 'undefined') {
   });
 }
 
+type Page = 'home' | 'learn' | 'world' | 'beat' | 'teacher' | 'drill';
+
 interface RouteMatch {
-  page: 'home' | 'learn' | 'world' | 'beat';
+  page: Page;
   zoneId?: string;
 }
 
 const currentRoute = computed((): RouteMatch => {
   const hash = route.value;
 
+  if (hash === '#/teacher' || hash.startsWith('#/teacher/')) {
+    return { page: 'teacher' };
+  }
+
+  if (hash === '#/drill' || hash.startsWith('#/drill/')) {
+    return { page: 'drill' };
+  }
+
   if (hash === '#/world' || hash.startsWith('#/world/')) {
     return { page: 'world' };
   }
 
-  // #/beat/<zoneId>
   const beatMatch = hash.match(/^#\/beat\/([\w-]+)$/);
   if (beatMatch) {
     return { page: 'beat', zoneId: beatMatch[1] };
   }
 
-  // #/learn/<zoneId> or #/learn
+  // #/learn/<zoneId> or #/learn — legacy presentation-and-reveal session,
+  // retained for the zone-entry flow. Daily drill lives at #/drill.
   const learnMatch = hash.match(/^#\/learn(?:\/([\w-]+))?$/);
   if (learnMatch) {
     return { page: 'learn', zoneId: learnMatch[1] || 'whispering-meadows' };
@@ -58,6 +71,22 @@ const currentRoute = computed((): RouteMatch => {
 
 export function App() {
   const r = currentRoute.value;
+
+  if (r.page === 'teacher') {
+    return (
+      <TeacherPanel
+        onBack={() => { window.location.hash = '#/'; }}
+      />
+    );
+  }
+
+  if (r.page === 'drill') {
+    return (
+      <DrillSession
+        onExit={() => { window.location.hash = '#/teacher'; }}
+      />
+    );
+  }
 
   if (r.page === 'world') {
     return <WorldRoute />;
@@ -86,14 +115,28 @@ export function App() {
     <main class="learn-landing" role="main">
       <h1 class="learn-landing__title">Phonics Flash</h1>
       <p class="learn-landing__subtitle">
-        Learn letter sounds with fun flash cards!
+        Flash-and-mask phonics drill with a teacher in the driver's seat.
       </p>
-      <Button
-        variant="primary"
-        onClick={() => { window.location.hash = '#/world'; }}
-      >
-        Start your journey
-      </Button>
+      <div class="learn-landing__actions" style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Button
+          variant="primary"
+          onClick={() => { window.location.hash = '#/teacher'; }}
+        >
+          Teacher Panel
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => { window.location.hash = '#/drill'; }}
+        >
+          Quick Drill
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => { window.location.hash = '#/world'; }}
+        >
+          World Map
+        </Button>
+      </div>
     </main>
   );
 }

@@ -81,3 +81,32 @@ Append-only. Agents propose. Coordinator ratifies.
 - Restart-on-fail is a true mastery gate. More frustrating-on-paper than self-paced, but the teacher's tone mediates this.
 - Language across the app shifts from child-facing self-assessment ("I know it!") to observational ("Correct"). Tone remains warm; "Try again" not "Wrong".
 - Speech recognition is fully deferred (no longer even a stretch goal for V1).
+
+---
+
+## ADR-008 · Flash-and-Mask Drill + Teacher Panel
+
+**Date:** 2026-04-16
+**Status:** Ratified
+**Context:** Testing an independent implementation (Phonics Flash Awesomer) surfaced two pedagogical and UX gaps in our design. First, our Learn session does "presentation-and-reveal" — show grapheme for a duration, reveal phoneme, teacher judges — which tests *"did they know it on seeing"*. The actual RSVP flash-exposure science is "flash-and-mask": a neutral mask, a brief flash, mask returns, child must *recall what they saw*. That builds orthographic mapping speed. Second, our content model is a locked 42-grapheme manifest; teachers have no surface to author a day-specific word list (sight words, this week's spellings, the 5 graphemes this kid keeps missing) without editing source code.
+**Decision:**
+1. Add a Teacher Panel route at `#/teacher` with:
+   - Freeform textarea for a comma-or-newline-separated word list
+   - Flash duration slider (50ms – 1500ms)
+   - Randomize toggle
+   - Preset loader (one preset per zone from the manifest) to seed the list
+   - localStorage persistence of the teacher's config across sessions and reloads
+2. Rewrite the Learn session as flash-and-mask drill:
+   - Default state: neutral mask + "Ready. Tap or press Space to flash." prompt
+   - Tap / click / Space / Enter → flash word for the configured duration → mask returns
+   - No per-card Correct/Try-again interruption. Drill is open-ended.
+   - Teacher-facing corner controls: Shuffle (reshuffle list), Done (return to teacher or world)
+3. Preserve the Beat Mode boss level's teacher-judged pass/fail gate (ADR-007) — it's a mastery checkpoint, not a drill.
+4. Preserve the world map, avatar, zones as the gamified progression wrapper. Zone entry now pre-populates the teacher panel with that zone's phonemes as a starting list.
+5. Session length boundaries and star ratings stay removed (ADR-007).
+**Consequences:**
+- The daily drill loop now matches how phonics actually gets taught: teacher configures today's list, paces the taps, observes the child's recall, restarts or switches lists as needed.
+- Teachers can author arbitrary lists without touching JSON or source code.
+- Mastery tracking via Learn is de-emphasized — the drill loop doesn't auto-record success/failure. Mastery progression now flows primarily through Beat Mode boss levels (still teacher-judged).
+- Two separate interaction models coexist: flash-and-mask drill (Learn) and pattern/oddball with end-of-sequence judgment (Beat Mode). Each serves a different purpose.
+- The ORP highlighting and variable-timing duration rules from M1/M2 are kept in the engine but become *optional* — teacher panel defaults to clean flash-and-mask with a flat duration, with per-zone or per-preset opt-ins for the fancier behaviors later.

@@ -1,0 +1,163 @@
+/* Teacher Panel styles */
+
+.teacher-panel {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  color: var(--color-text);
+}
+
+.teacher-panel__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.teacher-panel__title {
+  font-size: var(--text-xl);
+  margin: 0;
+  color: var(--color-text);
+}
+
+.teacher-panel__subtitle {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  margin: 0;
+  max-width: 60ch;
+}
+
+.teacher-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.teacher-panel__label {
+  display: block;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
+  margin: 0;
+  color: var(--color-text);
+}
+
+.teacher-panel__hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.teacher-panel__textarea {
+  width: 100%;
+  min-height: 8em;
+  padding: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  border: 2px solid var(--color-text-muted);
+  border-radius: var(--radius-md);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.teacher-panel__textarea:focus-visible {
+  border-color: var(--color-focus);
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.teacher-panel__meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.teacher-panel__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.teacher-panel__preset-btn {
+  padding: var(--space-2) var(--space-4);
+  min-height: var(--touch-min);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 2px solid var(--color-text-muted);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-out),
+              background-color var(--duration-fast) var(--ease-out);
+}
+
+.teacher-panel__preset-btn:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+.teacher-panel__preset-btn:active {
+  transform: scale(0.96);
+}
+
+.teacher-panel__preset-btn:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.teacher-panel__slider {
+  width: 100%;
+  height: var(--touch-min);
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.teacher-panel__slider-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.teacher-panel__toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.teacher-panel__toggle input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.teacher-panel__toggle-detail {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.teacher-panel__actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  padding: var(--space-3) 0 var(--space-6);
+}
