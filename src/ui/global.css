@@ -1,0 +1,203 @@
+/* ==========================================================================
+   Global Stylesheet — Phonics Flash
+   Imports tokens, sets base styles, layout primitives.
+   ========================================================================== */
+
+@import './tokens.css';
+
+/* -----------------------------------------------------------------------
+   FONT FACE — OpenDyslexic (self-hosted for offline)
+   NOTE: The Foundation Agent should place font files in /public/fonts/.
+   If OpenDyslexic woff2 files are not yet available, the system
+   falls back to Atkinson Hyperlegible (Google Fonts) then system sans.
+   ----------------------------------------------------------------------- */
+
+/* Uncomment when font files are placed in /public/fonts/
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+*/
+
+/* -----------------------------------------------------------------------
+   RESET — minimal, targeted
+   ----------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Base font-size stays 16px for rem calculations;
+     text sizes use our token scale (--text-base = 1.5rem = 24px) */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-active);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* -----------------------------------------------------------------------
+   TYPOGRAPHY DEFAULTS
+   ----------------------------------------------------------------------- */
+h1, h2, h3, h4 {
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+h4 { font-size: var(--text-base); }
+
+p {
+  max-width: 60ch;
+}
+
+/* -----------------------------------------------------------------------
+   LINKS
+   ----------------------------------------------------------------------- */
+a {
+  color: var(--color-info);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--color-info-hover);
+}
+
+/* -----------------------------------------------------------------------
+   FOCUS STYLES — visible, high contrast
+   ----------------------------------------------------------------------- */
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: var(--color-focus-offset);
+  border-radius: var(--radius-sm);
+}
+
+/* Remove default focus ring when not using keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* -----------------------------------------------------------------------
+   IMAGES & MEDIA
+   ----------------------------------------------------------------------- */
+img, svg, video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* -----------------------------------------------------------------------
+   BUTTON RESET
+   ----------------------------------------------------------------------- */
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* -----------------------------------------------------------------------
+   SELECTION — matches brand palette
+   ----------------------------------------------------------------------- */
+::selection {
+  background-color: var(--color-orp-bg);
+  color: var(--color-text);
+}
+
+/* -----------------------------------------------------------------------
+   APP LAYOUT — full viewport, centered content
+   ----------------------------------------------------------------------- */
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: var(--space-4);
+}
+
+/* -----------------------------------------------------------------------
+   SCREEN READER ONLY — utility class
+   Visually hidden but accessible to assistive tech.
+   ----------------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* -----------------------------------------------------------------------
+   MOTION SAFE / REDUCED — utility classes
+   ----------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* -----------------------------------------------------------------------
+   HIGH-CONTRAST BORDER UTILITY
+   ----------------------------------------------------------------------- */
+[data-contrast="high"] .card,
+[data-contrast="high"] .btn {
+  border: 2px solid var(--color-text);
+}
+
+/* -----------------------------------------------------------------------
+   SCROLLBAR STYLING — subtle, kid-friendly
+   ----------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: var(--radius-full);
+}

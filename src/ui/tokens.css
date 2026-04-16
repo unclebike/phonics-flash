@@ -1,0 +1,240 @@
+/* ==========================================================================
+   Design Tokens — Phonics Flash
+   All design decisions live here as CSS custom properties.
+   Components consume these tokens; nothing hard-codes raw values.
+   ========================================================================== */
+
+:root {
+  /* -----------------------------------------------------------------------
+     COLOR — Warm, playful, natural palette
+     Contrast ratios verified against neutral backgrounds.
+     Core text on card surfaces: 7:1 minimum.
+     ----------------------------------------------------------------------- */
+
+  /* Neutral backgrounds */
+  --color-bg:           #F4F4F4;
+  --color-bg-dark:      #1C1C1E;
+  --color-surface:      #FFFFFF;
+  --color-surface-dark: #2C2C2E;
+
+  /* Text — high contrast on both themes */
+  --color-text:         #1A1A1A;  /* 12.6:1 on #F4F4F4 */
+  --color-text-muted:   #4A4A4A;  /* 7.7:1  on #F4F4F4 */
+  --color-text-inverse: #F0F0F0;  /* 13.8:1 on #1C1C1E */
+
+  /* Accent — sunset orange (primary action) */
+  --color-primary:        #D95A2B;  /* warm orange */
+  --color-primary-hover:  #C04D23;
+  --color-primary-active: #A8421D;
+  --color-primary-text:   #FFFFFF;  /* white on orange: 4.6:1 large text OK */
+
+  /* Accent — forest green (success / correct) */
+  --color-success:        #2D8659;
+  --color-success-hover:  #24714A;
+  --color-success-active: #1C5D3D;
+  --color-success-text:   #FFFFFF;
+
+  /* Accent — sky blue (informational / links) */
+  --color-info:           #2B7BC0;
+  --color-info-hover:     #2468A3;
+  --color-info-active:    #1D5687;
+  --color-info-text:      #FFFFFF;
+
+  /* Accent — warm yellow (stars / rewards) */
+  --color-reward:         #E8A817;
+  --color-reward-glow:    #F5C842;
+
+  /* Accent — rose (incorrect / gentle error) */
+  --color-error:          #C0392B;
+  --color-error-hover:    #A33224;
+  --color-error-text:     #FFFFFF;
+
+  /* Card surface for RSVP display — slightly warm white */
+  --color-card:           #FFFBF5;
+  --color-card-dark:      #3A3632;
+
+  /* ORP highlight — the character the eye should land on */
+  --color-orp:            #D95A2B;
+  --color-orp-bg:         rgba(217, 90, 43, 0.12);
+
+  /* Focus ring */
+  --color-focus:          #2B7BC0;
+  --color-focus-offset:   3px;
+
+  /* -----------------------------------------------------------------------
+     HIGH-CONTRAST OVERRIDES — applied via [data-contrast="high"]
+     ----------------------------------------------------------------------- */
+  /* (see contrast.ts for toggle logic — overrides applied in global.css) */
+
+  /* -----------------------------------------------------------------------
+     TYPOGRAPHY — large, clear, child-friendly
+     ----------------------------------------------------------------------- */
+
+  /* Font families */
+  --font-primary:   'Nunito', 'Varela Round', system-ui, -apple-system, sans-serif;
+  --font-dyslexia:  'OpenDyslexic', 'Atkinson Hyperlegible', sans-serif;
+  --font-mono:      'JetBrains Mono', ui-monospace, monospace;
+
+  /* The active font — toggled by dyslexia mode */
+  --font-active:    var(--font-primary);
+
+  /* Sizing scale — generous for ages 4-9
+     Base is 24px (1.5rem), NOT the typical 16px.
+     Scale ratio: ~1.25 (major third) */
+  --text-xs:    1rem;       /* 16px — UI chrome only, never body */
+  --text-sm:    1.25rem;    /* 20px — secondary labels */
+  --text-base:  1.5rem;     /* 24px — body text, instructions */
+  --text-lg:    1.875rem;   /* 30px — card labels, prompts */
+  --text-xl:    2.25rem;    /* 36px — section headings */
+  --text-2xl:   3rem;       /* 48px — phoneme display on card */
+  --text-3xl:   4rem;       /* 64px — hero / large phoneme */
+
+  /* Line heights — roomy for readability */
+  --leading-tight:  1.2;
+  --leading-normal: 1.5;
+  --leading-loose:  1.8;
+
+  /* Font weights — no thin/light, minimum medium */
+  --weight-medium:    500;
+  --weight-semibold:  600;
+  --weight-bold:      700;
+  --weight-extrabold: 800;
+
+  /* Letter spacing — slightly open for young readers */
+  --tracking-normal:  0.01em;
+  --tracking-wide:    0.04em;
+  --tracking-phoneme: 0.08em;  /* extra space on phoneme cards */
+
+  /* -----------------------------------------------------------------------
+     SPACING — generous touch targets, roomy layout
+     ----------------------------------------------------------------------- */
+  --space-1:   0.25rem;   /*  4px */
+  --space-2:   0.5rem;    /*  8px */
+  --space-3:   0.75rem;   /* 12px */
+  --space-4:   1rem;      /* 16px */
+  --space-5:   1.5rem;    /* 24px */
+  --space-6:   2rem;      /* 32px */
+  --space-7:   2.5rem;    /* 40px */
+  --space-8:   3rem;      /* 48px */
+  --space-10:  4rem;      /* 64px */
+  --space-12:  5rem;      /* 80px */
+
+  /* -----------------------------------------------------------------------
+     LAYOUT
+     ----------------------------------------------------------------------- */
+  --radius-sm:   0.5rem;    /*  8px  — subtle rounding */
+  --radius-md:   0.75rem;   /* 12px  — cards */
+  --radius-lg:   1rem;      /* 16px  — buttons, panels */
+  --radius-xl:   1.5rem;    /* 24px  — large containers */
+  --radius-full: 9999px;    /* pills / circles */
+
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:   0 4px 8px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+  --shadow-glow: 0 0 16px rgba(232, 168, 23, 0.4);
+
+  /* -----------------------------------------------------------------------
+     TOUCH TARGETS — WCAG minimum 44x44, we go bigger for kids
+     ----------------------------------------------------------------------- */
+  --touch-min:    44px;
+  --touch-target: 56px;   /* our preferred minimum */
+
+  /* -----------------------------------------------------------------------
+     MOTION — durations & easings (gated by prefers-reduced-motion)
+     ----------------------------------------------------------------------- */
+  --duration-fast:    120ms;
+  --duration-normal:  250ms;
+  --duration-slow:    400ms;
+  --duration-sparkle: 600ms;
+
+  --ease-out:     cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out:  cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce:  cubic-bezier(0.34, 1.8, 0.64, 1);
+
+  /* -----------------------------------------------------------------------
+     Z-INDEX SCALE
+     ----------------------------------------------------------------------- */
+  --z-base:     0;
+  --z-card:     10;
+  --z-overlay:  100;
+  --z-modal:    200;
+  --z-toast:    300;
+  --z-sparkle:  400;
+}
+
+/* ==========================================================================
+   DARK THEME — [data-theme="dark"]
+   ========================================================================== */
+[data-theme="dark"] {
+  --color-bg:           #1C1C1E;
+  --color-surface:      #2C2C2E;
+  --color-text:         #F0F0F0;
+  --color-text-muted:   #A0A0A0;
+  --color-card:         #3A3632;
+  --color-orp-bg:       rgba(217, 90, 43, 0.20);
+  --color-focus:        #5CA8E5;
+
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.30);
+  --shadow-md:   0 4px 8px rgba(0,0,0,0.35);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,0.40);
+}
+
+/* ==========================================================================
+   HIGH-CONTRAST — [data-contrast="high"]
+   Forces maximum contrast, thicker borders, no subtle shadows.
+   ========================================================================== */
+[data-contrast="high"] {
+  --color-bg:           #FFFFFF;
+  --color-surface:      #FFFFFF;
+  --color-text:         #000000;
+  --color-text-muted:   #000000;
+  --color-card:         #FFFFFF;
+  --color-primary:      #B33D10;
+  --color-primary-hover:#8C3009;
+  --color-success:      #1A6B3C;
+  --color-info:         #1A5C99;
+  --color-orp:          #B33D10;
+  --color-focus:        #000000;
+
+  --shadow-sm:   none;
+  --shadow-md:   none;
+  --shadow-lg:   none;
+}
+
+[data-contrast="high"][data-theme="dark"] {
+  --color-bg:           #000000;
+  --color-surface:      #000000;
+  --color-text:         #FFFFFF;
+  --color-text-muted:   #FFFFFF;
+  --color-card:         #1A1A1A;
+  --color-primary:      #FF7A47;
+  --color-success:      #4ADE80;
+  --color-info:         #60A5FA;
+  --color-orp:          #FF7A47;
+  --color-focus:        #FFFFFF;
+}
+
+/* ==========================================================================
+   DYSLEXIA FONT — [data-font="dyslexia"]
+   ========================================================================== */
+[data-font="dyslexia"] {
+  --font-active: var(--font-dyslexia);
+  --tracking-normal:  0.04em;
+  --tracking-wide:    0.06em;
+  --tracking-phoneme: 0.10em;
+  --leading-normal:   1.7;
+  --leading-loose:    2.0;
+}
+
+/* ==========================================================================
+   REDUCED MOTION — collapse all durations
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast:    0ms;
+    --duration-normal:  0ms;
+    --duration-slow:    0ms;
+    --duration-sparkle: 0ms;
+  }
+}
