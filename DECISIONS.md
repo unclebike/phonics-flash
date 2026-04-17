@@ -131,3 +131,29 @@ Append-only. Agents propose. Coordinator ratifies.
 - The world map remains the gamified journey, the teacher panel remains the classroom-driver surface; the drill loop is the same underneath.
 - LearnSession is dead code but intentionally preserved for now. Add a code comment noting ADR-009.
 - DrillSession now has two inputs: localStorage teacher config (default), or a zoneId prop (override). The prop takes precedence when set.
+
+---
+
+## ADR-010 · Boss Mode Becomes Drill-Style Gauntlet
+
+**Date:** 2026-04-16
+**Status:** Ratified
+**Context:** Stage 2 (Beat Mode) was built under M4 as a BPM-paced, auto-advancing rhythm game with pattern/oddball scheduling via Web Audio API lookahead clock. Under ADR-007 it was adjusted to teacher-judged pass/fail at end of sequence. Under ADR-008 the main Stage 1 loop became flash-and-mask. Under ADR-009 zone entry unified to the drill mechanic. Stage 2 was left on the old auto-paced rhythm mechanic, which (a) is inconsistent with the rest of the app's interaction vocabulary, (b) doesn't match the teacher-led pedagogy that drives the rest of the UX, and (c) carries significant complexity (BeatClock, BeatScheduler, pattern-break oddball math, PEAT-safe flash rates) for behavior that no longer fits the design.
+**Decision:**
+1. Retire the BPM/rhythm/oddball model for V1 Boss Mode. The Boss is now a timed flash-and-mask gauntlet:
+   - Teacher and child take the zone's full phoneme list (shuffled once).
+   - Flash duration comes from the zone's `bossConfig.tempo`:
+     * `slow` → 500ms, `medium` → 300ms, `fast` → 180ms (harder than the Teacher Panel's 250ms default).
+   - Teacher or child paces taps/Space like the drill. Each flash is a gauntlet step.
+   - After the last flash, phase transitions to `'judging'` — teacher sees "Yes — correct" / "Try again" buttons.
+   - Correct → unlock next zone, success overlay, back to world.
+   - Try again → reset to first flash, attempt counter increments.
+2. `BeatSession.tsx`, `BeatClock`, `BeatScheduler`, and their test files remain on disk but are no longer referenced by the app — following the same preservation pattern we applied to `LearnSession.tsx` under ADR-009. They are candidates for V2 revival if we want to reintroduce a true rhythm game as a separate stage.
+3. `BossLevel.tsx` is rewritten to render the new `BossSession` component (flash-and-mask gauntlet) and still side-effects `PersistenceAdapter.unlockZone(nextZoneId)` on pass.
+4. The `#/beat/:zoneId` route is preserved (no URL churn, existing bookmarks keep working); it now renders the drill-style gauntlet. A future clean-up could rename to `#/boss/:zoneId` with a redirect.
+5. `bossConfig.requiredScore` and `bossConfig.length` fields are no longer read; they remain in the content manifest schema for V2 compatibility. `bossConfig.tempo` maps to flash duration as above.
+**Consequences:**
+- One interaction vocabulary across the entire app: flash-and-mask, teacher-judged.
+- Simpler code. The BeatClock (Web Audio lookahead scheduler) and BeatScheduler (pattern/oddball generator) are ~300 lines each plus tests; removing them from the active path drops bundle size and test surface.
+- Loses the "rhythm drill" dimension entirely for V1. That was a research-backed hook but not the core pedagogy.
+- The PEAT-safety guarantees on the old BeatSession (single-pulse flashes at <3 Hz) still apply: the drill's flash rate depends on how fast the teacher taps, which is nowhere near strobe range.

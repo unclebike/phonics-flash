@@ -186,6 +186,45 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Boss judgment / completion overlays (shown on .drill--masked) */
+.boss-judge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  max-width: 32rem;
+  text-align: center;
+  color: currentColor;
+}
+
+.boss-judge__title {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: var(--weight-extrabold);
+  margin: 0;
+}
+
+.boss-judge__body {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  margin: 0;
+  opacity: 0.85;
+}
+
+.boss-judge__body--pass {
+  color: var(--color-success);
+  font-weight: var(--weight-bold);
+  opacity: 1;
+}
+
+.boss-judge__actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
 /* Empty state */
 .drill__empty {
   display: flex;

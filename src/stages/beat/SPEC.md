@@ -1,42 +1,40 @@
-# Beat Mode (Stage 2) — SPEC.md
+# Boss Mode — SPEC.md
 
-**Owner:** Beat Mode Agent
-**Updated:** ADR-007 teacher-assisted redesign
+**Owner:** Beat Mode Agent (now Boss Mode Agent under ADR-010)
+**Current design:** ADR-010 drill-style flash-and-mask gauntlet
 
-## Flow (teacher-assisted)
+## Active modules
 
-1. Teacher and child sit together at the Boss Level
-2. Start button unlocks AudioContext (iOS Safari) and begins the sequence
-3. Pattern plays at the zone's configured tempo: phonemes flash in runs of 3-5 (same sound), then an oddball break (new sound) with a visible arena flash
-4. Child says each sound out loud as it appears; teacher observes
-5. Sequence completes → phase transitions to 'judging'
-6. Teacher sees "Yes — correct" / "Try again" buttons
-7. On "Try again": phase returns to 'ready', attempt counter increments, child can restart from beat 0
-8. On "Yes — correct": zone unlocks, complete overlay shows
+### BossSession.tsx
+A timed flash-and-mask gauntlet through a zone's phoneme list.
 
-## Tempos (from CONTENT_MANIFEST bossConfig)
+- Ready overlay: "Boss Level — N sounds. Tap or press Space to begin."
+- Tap / Space → first flash starts
+- Each flash lasts `TEMPO_MS[tempo]` (slow=500, medium=300, fast=180)
+- Between flashes: "Next — Tap or press Space" prompt
+- After last flash → judging overlay: "Yes — correct" / "Try again"
+- Pass: calls `onPass({ attempts })`, shows "You beat the boss!" overlay
+- Fail: resets to flash 0, attempt counter increments
 
-- slow = 80 BPM
-- medium = 110 BPM
-- fast = 140 BPM
+Props:
+- `zoneName` — display string for the header label
+- `items: string[]` — word/phoneme list (shuffled once on mount)
+- `tempo: Tempo` — 'slow' | 'medium' | 'fast' → flash duration
+- `onPass?: ({ attempts }) => void`
+- `onBack?: () => void`
 
-## Safety (PEAT)
+### BossLevel.tsx
+Zone-aware wrapper. Loads zone phonemes from CONTENT_MANIFEST, renders
+BossSession, calls `PersistenceAdapter.unlockZone(nextZoneId)` on pass.
 
-- Single-pulse break flash, 220ms, NOT chained
-- At 140 BPM (fastest), beats are 429ms apart — flash rate max ~2.3 Hz, well below 3 Hz PEAT floor
-- Flash color is a soft lift to `--color-orp-bg`, luminance change <30%
-- `prefers-reduced-motion` collapses transitions to 0ms via global.css
+## Retired modules (ADR-010)
 
-## Removed per ADR-007
+Kept on disk but no longer referenced by the app:
+- `BeatSession.tsx` — BPM/pattern-break rhythm game (M4)
+- `/src/audio/beat-clock.ts` — Web Audio API lookahead scheduler
+- `/src/core/beat-scheduler.ts` — pattern/oddball event generator
 
-- No self-scoring score/combo/miss counters (teacher is the judge)
-- No tap-on-oddball mechanic
-- No per-beat hit tolerance windows
-- No end-of-session numeric pass threshold (teacher decides)
-
-## Retained
-
-- Web Audio clock (lookahead scheduler, iOS unlock, ±8ms accuracy)
-- Pattern-break scheduler (visual cue for the teacher/child as a rhythm game aid)
-- Tab-blur pause, resume/quit overlay
-- Zone-unlock side-effect on pass
+These remain reachable via imports and tests for possible V2 revival.
+Pure-logic tests (`beat-clock.test.ts`, `beat-scheduler.test.ts`) still
+pass — they cover framework-agnostic behavior that doesn't depend on
+the app using the modules.

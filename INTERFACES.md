@@ -61,7 +61,24 @@ interface RsvpEngine {
 
 ---
 
-## Core <-> Beat Mode
+## Boss Mode (ADR-010)
+
+```ts
+// /src/stages/beat/BossSession.tsx
+interface BossSessionProps {
+  zoneName: string;
+  items: string[];
+  tempo: Tempo;                                  // 'slow' | 'medium' | 'fast'
+  onPass?: (result: { attempts: number }) => void;
+  onBack?: () => void;
+}
+// Flash duration: slow=500ms, medium=300ms, fast=180ms
+```
+
+## Core <-> Beat Mode (retired — ADR-010)
+
+Below are the contracts for the retired BPM/pattern-break rhythm
+modules. Kept for reference; no longer referenced by the active app.
 
 ```ts
 // /src/core/beat-scheduler.ts
@@ -78,7 +95,7 @@ interface BeatScheduler {
 }
 
 type Tempo = 'slow' | 'medium' | 'fast';
-// slow = 80 BPM, medium = 110 BPM, fast = 140 BPM
+// slow = 80 BPM, medium = 110 BPM, fast = 140 BPM (retired mapping)
 ```
 
 ---
