@@ -32,6 +32,9 @@ export interface UserSettings {
 export interface PersistenceAdapter {
   getProgress(phonemeId: string): Promise<PhonemeProgress | null>;
   updateProgress(phonemeId: string, update: ProgressUpdate): Promise<void>;
+  /** Directly set a phoneme's mastery level (used by Boss Mode on pass
+   *  to grant mastery without requiring drill-accuracy accumulation). */
+  setPhonemeMastery(phonemeId: string, level: number): Promise<void>;
   getAvatarState(): Promise<AvatarState>;
   updateAvatarState(update: Partial<AvatarState>): Promise<void>;
   getUnlockedZones(): Promise<string[]>;
@@ -99,6 +102,24 @@ export function createPersistenceAdapter(): PersistenceAdapter {
         }
       }
 
+      await set(KEYS.progress(phonemeId), progress);
+    },
+
+    async setPhonemeMastery(phonemeId: string, level: number): Promise<void> {
+      const clamped = Math.max(0, Math.min(5, Math.floor(level)));
+      const existing = await get<PhonemeProgress>(KEYS.progress(phonemeId));
+      const progress: PhonemeProgress = existing ?? {
+        phonemeId,
+        masteryLevel: 0,
+        lastSeenAt: 0,
+        attempts: 0,
+        correct: 0,
+      };
+      // Only raise mastery — never clobber progress downward.
+      if (clamped > progress.masteryLevel) {
+        progress.masteryLevel = clamped;
+      }
+      progress.lastSeenAt = Date.now();
       await set(KEYS.progress(phonemeId), progress);
     },
 

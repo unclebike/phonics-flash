@@ -2,6 +2,7 @@ import { useMemo } from 'preact/hooks';
 import { CONTENT_MANIFEST } from '../../content/manifest';
 import { PHONICS_DATA } from '../../content/phonics';
 import { createPersistenceAdapter } from '../../engine/persistence';
+import { MASTERY_COMPLETE } from '../../world/unlock';
 import { BossSession } from './BossSession';
 
 export interface BossLevelProps {
@@ -17,19 +18,19 @@ const persistence = createPersistenceAdapter();
  * BeatSession. On pass, unlocks the next zone in manifest order.
  */
 export function BossLevel({ zoneId, onBack }: BossLevelProps) {
-  const { zone, items, nextZoneId } = useMemo(() => {
+  const { zone, items, zonePhonemeIds, nextZoneId } = useMemo(() => {
     const idx = CONTENT_MANIFEST.zones.findIndex((z) => z.id === zoneId);
     const zone = idx >= 0 ? CONTENT_MANIFEST.zones[idx] : null;
-    const items = zone
-      ? PHONICS_DATA
-          .filter((p) => zone.phonemeSets.includes(p.set))
-          .map((p) => p.grapheme)
+    const zonePhonemes = zone
+      ? PHONICS_DATA.filter((p) => zone.phonemeSets.includes(p.set))
       : [];
+    const items = zonePhonemes.map((p) => p.grapheme);
+    const zonePhonemeIds = zonePhonemes.map((p) => p.id);
     const nextZone =
       idx >= 0 && idx + 1 < CONTENT_MANIFEST.zones.length
         ? CONTENT_MANIFEST.zones[idx + 1]
         : null;
-    return { zone, items, nextZoneId: nextZone?.id ?? null };
+    return { zone, items, zonePhonemeIds, nextZoneId: nextZone?.id ?? null };
   }, [zoneId]);
 
   const exit = () => {
@@ -65,12 +66,20 @@ export function BossLevel({ zoneId, onBack }: BossLevelProps) {
       tempo={zone.bossConfig.tempo}
       onBack={exit}
       onPass={async () => {
-        if (nextZoneId) {
-          try {
-            await persistence.unlockZone(nextZoneId);
-          } catch {
-            // Non-fatal — persistence is best-effort in V1.
-          }
+        try {
+          // Grant mastery for every phoneme in this zone so the unlock
+          // engine (which reads phoneme masteryLevel) recognizes the zone
+          // as completed and the next zone's prerequisites as satisfied.
+          await Promise.all(
+            zonePhonemeIds.map((pid) =>
+              persistence.setPhonemeMastery(pid, MASTERY_COMPLETE),
+            ),
+          );
+          // Also record the next zone as explicitly unlocked for any
+          // consumer that reads the unlocked-zones list directly.
+          if (nextZoneId) await persistence.unlockZone(nextZoneId);
+        } catch {
+          // Non-fatal — persistence is best-effort in V1.
         }
       }}
     />

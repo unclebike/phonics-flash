@@ -157,3 +157,29 @@ Append-only. Agents propose. Coordinator ratifies.
 - Simpler code. The BeatClock (Web Audio lookahead scheduler) and BeatScheduler (pattern/oddball generator) are ~300 lines each plus tests; removing them from the active path drops bundle size and test surface.
 - Loses the "rhythm drill" dimension entirely for V1. That was a research-backed hook but not the core pedagogy.
 - The PEAT-safety guarantees on the old BeatSession (single-pulse flashes at <3 Hz) still apply: the drill's flash rate depends on how fast the teacher taps, which is nowhere near strobe range.
+
+---
+
+## ADR-011 · Positional Variance for Optical Training
+
+**Date:** 2026-04-16
+**Status:** Ratified
+**Context:** TRUTH.md originally specified "fixed focal point" to minimize eye-movement cost during RSVP flash-exposure drills. That is correct for early readers learning grapheme-sound correspondences. However, advanced drills benefit from *saccadic / peripheral recognition training* — deliberately varying where on screen the flash appears so the eye has to find the target rather than relying on fixation. This is a separate skill from grapheme recognition and is what lets fluent readers parse text at real-world speeds. A single app can support both by making positional variance a configurable dimension of difficulty, not a constant.
+**Decision:**
+1. Add a new `positionVariance` field (0-100) to `TeacherConfig`, default 0.
+   - 0 = letters always centered (current behavior, safest for new readers).
+   - 100 = maximum safe range (letters can appear near the screen edges, still fully visible).
+2. Teacher Panel exposes a "Letter position variance" slider alongside the existing flash-duration slider.
+3. DrillSession renders each flash at a per-flash random offset within the variance range. Offsets are expressed as unit multipliers (-1..+1) applied via CSS custom properties (`--drill-ox`, `--drill-oy`) to a `transform: translate(...)` on the word element. Actual pixel distance uses `clamp()` so letters stay fully on screen at any viewport size.
+4. BossSession defaults variance based on the zone's `bossConfig.tempo`:
+   - `slow` → variance 0 (no movement)
+   - `medium` → variance 40 (moderate)
+   - `fast` → variance 80 (substantial)
+   Zones can still opt into different values later; the tempo→variance map is a sensible default that keeps harder zones genuinely harder.
+5. Variance is a per-flash random roll, not an animated path. Letters appear at a fixed position for the duration of each flash, move nowhere during it, then mask returns and the next flash rolls a new position. This keeps the mechanic compatible with the flash-and-mask pedagogy (no moving targets during recall).
+6. Accessibility: `prefers-reduced-motion` does not need to affect this — the letters are static during each flash. Position variance is a recognition challenge, not motion.
+**Consequences:**
+- TRUTH.md's "fixed focal point" principle is relaxed to "fixed focal point by default, configurable variance for advanced drills". Annotated in TRUTH.md.
+- Zone progression now has a built-in difficulty axis: later zones ship medium/fast tempos which imply more variance.
+- Teachers can isolate the difficulty they want: a student struggling with grapheme recognition gets variance 0; a student practicing fluency gets variance 60+.
+- No external dependencies. Pure CSS custom properties + JS per-flash roll.

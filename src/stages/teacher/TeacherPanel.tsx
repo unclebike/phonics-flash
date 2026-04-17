@@ -115,6 +115,29 @@ export function TeacherPanel({ onBack }: TeacherPanelProps) {
         </p>
       </section>
 
+      <section class="teacher-panel__section" aria-labelledby="variance-label">
+        <label id="variance-label" class="teacher-panel__label" for="variance">
+          Letter position variance: <strong>{config.value.positionVariance}</strong>
+        </label>
+        <input
+          id="variance"
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          class="teacher-panel__slider"
+          value={config.value.positionVariance}
+          onInput={(e) => update({ positionVariance: parseInt((e.target as HTMLInputElement).value, 10) })}
+        />
+        <div class="teacher-panel__slider-legend">
+          <span>0 — centered</span>
+          <span>100 — full range</span>
+        </div>
+        <p class="teacher-panel__hint">
+          Above 0, letters appear at a random spot on the screen each flash. Trains the eye to find the target — harder, better for fluency practice.
+        </p>
+      </section>
+
       <section class="teacher-panel__section" aria-labelledby="options-label">
         <h2 id="options-label" class="teacher-panel__label">Options</h2>
 

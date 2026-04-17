@@ -81,6 +81,20 @@
   color: var(--color-text);
   text-align: center;
   pointer-events: none;
+  /* ADR-011: positional variance. --drill-ox / --drill-oy are unit
+     multipliers in [-1, +1]. Actual displacement is clamped so the
+     letter stays fully on screen at any viewport size. */
+  transform: translate(
+    calc(var(--drill-ox, 0) * clamp(0px, 35vw, 280px)),
+    calc(var(--drill-oy, 0) * clamp(0px, 30vh, 220px))
+  );
+  transition: transform 0ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Transform is set synchronously per flash, no animation — safe
+     under reduced motion. Kept here as a documentation anchor. */
+  .drill__word { transition: none; }
 }
 
 .drill__word-orp {

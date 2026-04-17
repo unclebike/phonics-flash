@@ -31,7 +31,7 @@
 - Children 4-9. Touch-first. TV-aware in Beat Mode. WCAG 2.1 AA. PEAT-safe.
 - V1 ships Stage 1 + Stage 2 + world map with >=3 populated zones.
 - 42-grapheme Phase 2 scope. Original characters and mnemonics. Web Speech fallback. Human-recording upgrade path baked in.
-- Variable RSVP timing. ORP highlighting. Fixed focal point. Neutral background. Slow in Learn, pressured-but-kind in Beat.
+- Variable RSVP timing. ORP highlighting. Fixed focal point by default, with configurable position variance for advanced optical training (ADR-011). Neutral background. Slow in Learn, pressured-but-kind in Beat.
 - Autonomy, competence, relatedness — every screen.
 - The world is the hook. Not a progress bar.
 - No Jolly. No purple-gradient-SaaS UI. No worksheet. No owl.

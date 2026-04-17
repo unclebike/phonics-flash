@@ -19,6 +19,10 @@ export interface TeacherConfig {
   showOrp: boolean;
   /** Optional: vary duration by word length / digraph rules. Off by default. */
   variableTiming: boolean;
+  /** ADR-011: 0-100. 0 = letters always centered. >0 = random per-flash
+   *  offset within a safe range. Trains saccadic recognition. Off by
+   *  default so new readers get a fixed focal point. */
+  positionVariance: number;
 }
 
 const STORAGE_KEY = 'phonics-flash:teacher-config';
@@ -29,6 +33,7 @@ export const DEFAULT_CONFIG: TeacherConfig = {
   randomize: false,
   showOrp: false,
   variableTiming: false,
+  positionVariance: 0,
 };
 
 /**
@@ -67,6 +72,21 @@ export function saveConfig(config: TeacherConfig): void {
   } catch {
     // Quota errors, private-mode, etc — fail silently.
   }
+}
+
+/**
+ * Roll a per-flash 2D offset in unit space (-1..+1) given a variance
+ * level (0-100). Used by DrillSession and BossSession to position each
+ * flash. Consumers apply this via CSS transform + clamp() to keep the
+ * letter on screen at any viewport.
+ */
+export function rollOffset(variance: number, rng: () => number = Math.random): { ox: number; oy: number } {
+  if (variance <= 0) return { ox: 0, oy: 0 };
+  const v = Math.max(0, Math.min(100, variance)) / 100;
+  return {
+    ox: (rng() * 2 - 1) * v,
+    oy: (rng() * 2 - 1) * v,
+  };
 }
 
 /** Preset lists derived from the content manifest zones. */

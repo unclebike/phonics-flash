@@ -14,7 +14,7 @@
 import { useSignal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { computeORP, durationFor } from '../../core/rsvp-engine';
-import { loadConfig, parseList, type TeacherConfig } from '../teacher/config';
+import { loadConfig, parseList, rollOffset, type TeacherConfig } from '../teacher/config';
 import { CONTENT_MANIFEST } from '../../content/manifest';
 import { PHONICS_DATA } from '../../content/phonics';
 
@@ -66,6 +66,7 @@ export function DrillSession({ zoneId, configOverride, onExit }: DrillSessionPro
   const index = useSignal(0);
   const phase = useSignal<Phase>('ready');
   const flashedCount = useSignal(0);
+  const offset = useSignal<{ ox: number; oy: number }>({ ox: 0, oy: 0 });
 
   const maskTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -105,6 +106,9 @@ export function DrillSession({ zoneId, configOverride, onExit }: DrillSessionPro
     const idx = index.value % words.value.length;
     const word = words.value[idx];
     const duration = flashDurationFor(word);
+
+    // Roll a per-flash offset for positional variance (ADR-011).
+    offset.value = rollOffset(config.value.positionVariance);
 
     phase.value = 'flashing';
     if (maskTimerRef.current) clearTimeout(maskTimerRef.current);
@@ -246,7 +250,13 @@ export function DrillSession({ zoneId, configOverride, onExit }: DrillSessionPro
       {/* Central area: either the mask (ready) or the flash */}
       <div class="drill__stage" aria-live="polite">
         {isFlashing ? (
-          <span class="drill__word">
+          <span
+            class="drill__word"
+            style={{
+              ['--drill-ox' as any]: String(offset.value.ox),
+              ['--drill-oy' as any]: String(offset.value.oy),
+            }}
+          >
             {orp >= 0 && orp < currentWord.length ? (
               <>
                 <span>{currentWord.slice(0, orp)}</span>

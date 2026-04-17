@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseList, getPresets, DEFAULT_CONFIG, SIGHT_WORDS_PRESET } from '../config';
+import { parseList, getPresets, DEFAULT_CONFIG, SIGHT_WORDS_PRESET, rollOffset } from '../config';
 
 describe('parseList', () => {
   it('splits on commas', () => {
@@ -51,6 +51,46 @@ describe('default config', () => {
     expect(DEFAULT_CONFIG.flashDurationMs).toBeGreaterThan(0);
     expect(DEFAULT_CONFIG.flashDurationMs).toBeLessThan(2000);
     expect(DEFAULT_CONFIG.randomize).toBe(false);
+  });
+
+  it('positionVariance defaults to 0 (centered letters)', () => {
+    expect(DEFAULT_CONFIG.positionVariance).toBe(0);
+  });
+});
+
+describe('rollOffset (ADR-011)', () => {
+  it('returns (0, 0) when variance is 0', () => {
+    expect(rollOffset(0)).toEqual({ ox: 0, oy: 0 });
+    // Even with a non-default RNG, 0 variance means no movement.
+    expect(rollOffset(0, () => 0.99)).toEqual({ ox: 0, oy: 0 });
+  });
+
+  it('returns values in [-1, +1] for any variance', () => {
+    for (let v = 10; v <= 100; v += 10) {
+      for (let trial = 0; trial < 50; trial++) {
+        const { ox, oy } = rollOffset(v);
+        expect(ox).toBeGreaterThanOrEqual(-1);
+        expect(ox).toBeLessThanOrEqual(1);
+        expect(oy).toBeGreaterThanOrEqual(-1);
+        expect(oy).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it('scales offset range with variance', () => {
+    // Deterministic RNG that always returns 1 → offset magnitude = variance/100
+    const rng = () => 1;
+    expect(rollOffset(50, rng)).toEqual({ ox: 0.5, oy: 0.5 });
+    expect(rollOffset(100, rng)).toEqual({ ox: 1, oy: 1 });
+    // RNG returns 0 → (0*2-1) * v = -v
+    const rngZero = () => 0;
+    expect(rollOffset(50, rngZero)).toEqual({ ox: -0.5, oy: -0.5 });
+  });
+
+  it('clamps variance outside [0, 100]', () => {
+    const rng = () => 1;
+    expect(rollOffset(-50, rng)).toEqual({ ox: 0, oy: 0 });  // treated as 0
+    expect(rollOffset(200, rng)).toEqual({ ox: 1, oy: 1 });  // clamped to 100
   });
 });
 

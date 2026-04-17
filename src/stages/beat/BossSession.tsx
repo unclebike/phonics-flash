@@ -15,6 +15,7 @@ import { useSignal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import type { Tempo } from '../../audio/beat-clock';
 import { Button } from '../../ui/components/Button';
+import { rollOffset } from '../teacher/config';
 
 type Phase = 'ready' | 'flashing' | 'judging' | 'complete';
 
@@ -25,6 +26,9 @@ export interface BossSessionProps {
   items: string[];
   /** Controls flash duration. slow=500ms, medium=300ms, fast=180ms. */
   tempo: Tempo;
+  /** Override the default tempo-derived position variance (ADR-011).
+   *  0 = centered letters. 100 = max safe random offset per flash. */
+  positionVariance?: number;
   /** Fires when the teacher marks the run correct. */
   onPass?: (result: { attempts: number }) => void;
   /** Fires when the teacher or child exits. */
@@ -37,6 +41,13 @@ const TEMPO_MS: Record<Tempo, number> = {
   fast: 180,
 };
 
+/** Default position variance by tempo (ADR-011). Harder tempos get more spread. */
+const TEMPO_VARIANCE: Record<Tempo, number> = {
+  slow: 0,
+  medium: 40,
+  fast: 80,
+};
+
 function shuffleCopy<T>(arr: T[]): T[] {
   const out = arr.slice();
   for (let i = out.length - 1; i > 0; i--) {
@@ -46,16 +57,18 @@ function shuffleCopy<T>(arr: T[]): T[] {
   return out;
 }
 
-export function BossSession({ zoneName, items, tempo, onPass, onBack }: BossSessionProps) {
+export function BossSession({ zoneName, items, tempo, positionVariance, onPass, onBack }: BossSessionProps) {
   const phase = useSignal<Phase>('ready');
   const sequence = useSignal<string[]>(shuffleCopy(items));
   const index = useSignal(0);
   const attempts = useSignal(0);
+  const offset = useSignal<{ ox: number; oy: number }>({ ox: 0, oy: 0 });
 
   const maskTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const passCalledRef = useRef(false);
 
   const flashMs = TEMPO_MS[tempo];
+  const variance = positionVariance ?? TEMPO_VARIANCE[tempo];
 
   // Reset when inputs change.
   useEffect(() => {
@@ -92,6 +105,8 @@ export function BossSession({ zoneName, items, tempo, onPass, onBack }: BossSess
   };
 
   const flashCurrent = () => {
+    // Roll offset for this flash (ADR-011).
+    offset.value = rollOffset(variance);
     if (maskTimerRef.current) clearTimeout(maskTimerRef.current);
     maskTimerRef.current = setTimeout(() => {
       // Mask returns. If we were on the last item, hand to judging.
@@ -267,7 +282,15 @@ export function BossSession({ zoneName, items, tempo, onPass, onBack }: BossSess
 
       <div class="drill__stage">
         {isFlashing ? (
-          <span class="drill__word">{currentWord}</span>
+          <span
+            class="drill__word"
+            style={{
+              ['--drill-ox' as any]: String(offset.value.ox),
+              ['--drill-oy' as any]: String(offset.value.oy),
+            }}
+          >
+            {currentWord}
+          </span>
         ) : (
           <div class="drill__ready">
             <span class="drill__ready-title">Next</span>
