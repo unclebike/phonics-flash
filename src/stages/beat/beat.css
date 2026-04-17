@@ -13,14 +13,21 @@
  */
 
 .beat-session {
-  min-height: 100dvh;
+  /* Full-viewport takeover, matching the drill. Avoids whitespace /
+     scroll-position issues when navigating in from #/drill/:zoneId
+     where the drill also uses position:fixed. */
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-active);
-  position: relative;
   overflow: hidden;
+  z-index: 1;
 }
 
 /* --- HUD --- */

@@ -25,6 +25,9 @@ const route = signal(window.location.hash || '#/');
 if (typeof window !== 'undefined') {
   window.addEventListener('hashchange', () => {
     route.value = window.location.hash || '#/';
+    // Reset scroll position on route change so content is never hidden
+    // below the fold after navigating from a position:fixed screen.
+    window.scrollTo(0, 0);
   });
 }
 
