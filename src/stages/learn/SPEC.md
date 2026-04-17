@@ -1,31 +1,36 @@
-# Learn Mode (Stage 1) — SPEC.md
+# Learn Stage — SPEC.md
 
 **Owner:** Learn Mode Agent
-**Updated:** ADR-007 teacher-assisted redesign
+**Current design:** ADR-008 flash-and-mask drill, ADR-009 zone-aware entry
 
-## Flow (teacher-assisted)
+## Active module: DrillSession
 
-1. Teacher and child sit together
-2. Child selects zone -> session loads phonemes for that zone
-3. RsvpEngine schedules a session of N items
-4. Card presents with ORP highlighting, fixed focal point
-5. Child says the sound out loud
-6. Teacher marks "Correct" or "Try again"
-7. On "Correct": Sparkle, advance to next card
-8. On "Try again": whole session restarts from card 1 (after a brief friendly message)
-9. Complete all cards correctly -> pass, mastery persisted, offer boss challenge
+`/src/stages/learn/DrillSession.tsx` is the primary Stage 1 experience.
 
-## UI Language (teacher-facing)
+### Inputs
+- `zoneId?` — if set, loads that zone's phonemes from CONTENT_MANIFEST
+  as a per-session list override (does NOT persist)
+- `configOverride?` — full TeacherConfig override (tests / deep links)
+- `onExit?` — callback fired on Done / Escape
 
-- Primary button: "Correct"
-- Secondary button: "Try again"
-- Restart message: "Great try! Let's start from the beginning."
-- Complete message: "You did it! All the way through."
-- NO "I know it!" / "Help me" (that was child self-assessment, removed per ADR-007)
-- NO stars out of 5, numeric streak counters (removed)
+### List resolution priority
+1. `configOverride.rawList` (tests)
+2. zone phonemes when `zoneId` matches a manifest zone
+3. `loadConfig()` from localStorage (teacher panel default)
 
-## What persists to IndexedDB
+### Flow
+1. Default state: dark mask, "Ready — Tap or press Space to flash"
+2. Tap / click / Space / Enter → word flashes for configured duration
+3. Mask returns, pointer advances, counter increments
+4. No per-card judgment. Teacher paces and makes calls verbally.
+5. Escape or Done button → onExit
 
-- A phoneme is marked mastered only when the session completes WITHOUT a restart
-- Attempts and correct counts track the clean-pass statistic
-- Restart-count per session is NOT persisted (not a scoring mechanic)
+### Zone context
+When launched with a zoneId, a small "Zone: {name}" context label appears
+in the header / corner so the child and teacher know which zone they're in.
+
+## Retired module: LearnSession (ADR-009)
+
+`/src/stages/learn/LearnSession.tsx` is no longer reachable via any UI
+route. The file is retained for possible V2 revival (per-card teacher
+judgment mode). Do not delete without a follow-up ADR.

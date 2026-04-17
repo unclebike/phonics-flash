@@ -4,6 +4,28 @@ Every public function, exported type, and event bus message that crosses an agen
 
 ---
 
+## Content / World <-> Drill Session (ADR-009)
+
+```ts
+// /src/stages/learn/DrillSession.tsx
+interface DrillSessionProps {
+  /** When set, loads that zone's phonemes as a per-session list
+   *  override. Does NOT mutate the teacher's saved config. */
+  zoneId?: string;
+  /** Optional override of the persisted teacher config (tests/deep-links). */
+  configOverride?: TeacherConfig;
+  onExit?: () => void;
+}
+```
+
+The drill resolves its word list in this priority order:
+
+1. `configOverride.rawList` (tests only)
+2. CONTENT_MANIFEST zone phonemes if `zoneId` matches a manifest zone
+3. `loadConfig().rawList` (teacher panel / localStorage default)
+
+The teacher's saved list in localStorage is never overwritten by zone entry.
+
 ## Core <-> Learn Mode
 
 ```ts

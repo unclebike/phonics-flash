@@ -2,12 +2,10 @@ import { signal, computed } from '@preact/signals';
 import { Button, ButtonStyles } from './ui/components/Button';
 import { CardStyles } from './ui/components/Card';
 import { SparkleStyles } from './ui/components/Sparkle';
-import { LearnMode } from './stages/learn/index';
 import { DrillSession } from './stages/learn/DrillSession';
 import { BossLevel } from './stages/beat/index';
 import { WorldRoute } from './world/index';
 import { TeacherPanel } from './stages/teacher/TeacherPanel';
-import './stages/learn/learn.css';
 import './stages/learn/drill.css';
 import './stages/beat/beat.css';
 import './stages/teacher/teacher.css';
@@ -30,7 +28,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
-type Page = 'home' | 'learn' | 'world' | 'beat' | 'teacher' | 'drill';
+type Page = 'home' | 'world' | 'beat' | 'teacher' | 'drill';
 
 interface RouteMatch {
   page: Page;
@@ -44,8 +42,11 @@ const currentRoute = computed((): RouteMatch => {
     return { page: 'teacher' };
   }
 
-  if (hash === '#/drill' || hash.startsWith('#/drill/')) {
-    return { page: 'drill' };
+  // #/drill/<zoneId> — drill preloaded with that zone's phonemes (ADR-009)
+  // #/drill — drill using the teacher's saved custom list
+  const drillMatch = hash.match(/^#\/drill(?:\/([\w-]+))?$/);
+  if (drillMatch) {
+    return { page: 'drill', zoneId: drillMatch[1] };
   }
 
   if (hash === '#/world' || hash.startsWith('#/world/')) {
@@ -57,11 +58,12 @@ const currentRoute = computed((): RouteMatch => {
     return { page: 'beat', zoneId: beatMatch[1] };
   }
 
-  // #/learn/<zoneId> or #/learn — legacy presentation-and-reveal session,
-  // retained for the zone-entry flow. Daily drill lives at #/drill.
+  // Legacy redirect: #/learn/:zoneId was the presentation-and-reveal
+  // route. ADR-009 routes zone entry through the drill instead. Keep
+  // this as a redirect-style handler so old bookmarks still work.
   const learnMatch = hash.match(/^#\/learn(?:\/([\w-]+))?$/);
   if (learnMatch) {
-    return { page: 'learn', zoneId: learnMatch[1] || 'whispering-meadows' };
+    return { page: 'drill', zoneId: learnMatch[1] || 'whispering-meadows' };
   }
 
   return { page: 'home' };
@@ -83,22 +85,16 @@ export function App() {
   if (r.page === 'drill') {
     return (
       <DrillSession
-        onExit={() => { window.location.hash = '#/teacher'; }}
+        zoneId={r.zoneId}
+        onExit={() => {
+          window.location.hash = r.zoneId ? '#/world' : '#/teacher';
+        }}
       />
     );
   }
 
   if (r.page === 'world') {
     return <WorldRoute />;
-  }
-
-  if (r.page === 'learn') {
-    return (
-      <LearnMode
-        zoneId={r.zoneId}
-        onBack={() => { window.location.hash = '#/world'; }}
-      />
-    );
   }
 
   if (r.page === 'beat' && r.zoneId) {

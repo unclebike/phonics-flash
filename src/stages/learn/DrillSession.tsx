@@ -5,19 +5,38 @@
  * brief flash of one word. Mask returns. No per-card judgment during the
  * drill — the teacher paces it and makes calls verbally.
  *
- * Under ADR-008: this replaces the presentation-and-reveal model from
- * LearnSession.tsx.
+ * Under ADR-008: this replaces the presentation-and-reveal model.
+ * Under ADR-009: accepts an optional zoneId prop that loads that zone's
+ * phonemes as a per-session list override (without mutating the
+ * teacher's saved localStorage config).
  */
 
 import { useSignal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { computeORP, durationFor } from '../../core/rsvp-engine';
 import { loadConfig, parseList, type TeacherConfig } from '../teacher/config';
+import { CONTENT_MANIFEST } from '../../content/manifest';
+import { PHONICS_DATA } from '../../content/phonics';
 
 export interface DrillSessionProps {
+  /** When set, loads that zone's phonemes from the manifest instead of
+   *  the teacher's saved list. Does not persist. */
+  zoneId?: string;
   /** Optional override of the persisted teacher config (for tests / deep links). */
   configOverride?: TeacherConfig;
   onExit?: () => void;
+}
+
+/** Build a rawList string from a zone's phonemes, or null if not found. */
+function zoneListFor(zoneId: string | undefined): { name: string; list: string } | null {
+  if (!zoneId) return null;
+  const zone = CONTENT_MANIFEST.zones.find((z) => z.id === zoneId);
+  if (!zone) return null;
+  const list = PHONICS_DATA
+    .filter((p) => zone.phonemeSets.includes(p.set))
+    .map((p) => p.grapheme)
+    .join(', ');
+  return { name: zone.name, list };
 }
 
 type Phase = 'ready' | 'flashing';
@@ -31,12 +50,18 @@ function shuffleCopy<T>(arr: T[]): T[] {
   return out;
 }
 
-export function DrillSession({ configOverride, onExit }: DrillSessionProps) {
-  const config = useSignal<TeacherConfig>(configOverride ?? loadConfig());
+export function DrillSession({ zoneId, configOverride, onExit }: DrillSessionProps) {
+  // Resolve initial config + list with priority: configOverride > zone > localStorage.
+  const initialConfig = configOverride ?? loadConfig();
+  const zoneContext = zoneListFor(zoneId);
+  const initialRawList = zoneContext ? zoneContext.list : initialConfig.rawList;
+
+  const config = useSignal<TeacherConfig>({ ...initialConfig, rawList: initialRawList });
+  const zoneName = useSignal<string | null>(zoneContext?.name ?? null);
   const words = useSignal<string[]>(
-    config.value.randomize
-      ? shuffleCopy(parseList(config.value.rawList))
-      : parseList(config.value.rawList),
+    initialConfig.randomize
+      ? shuffleCopy(parseList(initialRawList))
+      : parseList(initialRawList),
   );
   const index = useSignal(0);
   const phase = useSignal<Phase>('ready');
@@ -44,11 +69,14 @@ export function DrillSession({ configOverride, onExit }: DrillSessionProps) {
 
   const maskTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reset if the config changes mid-session (rare, but handle it).
+  // Reset if zoneId / override changes mid-session.
   useEffect(() => {
     const fresh = configOverride ?? loadConfig();
-    config.value = fresh;
-    const parsed = parseList(fresh.rawList);
+    const ctx = zoneListFor(zoneId);
+    const rawList = ctx ? ctx.list : fresh.rawList;
+    config.value = { ...fresh, rawList };
+    zoneName.value = ctx?.name ?? null;
+    const parsed = parseList(rawList);
     words.value = fresh.randomize ? shuffleCopy(parsed) : parsed;
     index.value = 0;
     phase.value = 'ready';
@@ -56,7 +84,7 @@ export function DrillSession({ configOverride, onExit }: DrillSessionProps) {
     return () => {
       if (maskTimerRef.current) clearTimeout(maskTimerRef.current);
     };
-  }, [configOverride]);
+  }, [zoneId, configOverride]);
 
   const flashDurationFor = (word: string): number => {
     const base = config.value.flashDurationMs;
@@ -122,7 +150,14 @@ export function DrillSession({ configOverride, onExit }: DrillSessionProps) {
   };
 
   const handleDone = () => {
-    if (onExit) onExit(); else window.location.hash = '#/teacher';
+    if (onExit) onExit();
+    else if (zoneId) window.location.hash = '#/world';
+    else window.location.hash = '#/teacher';
+  };
+
+  const handleBossChallenge = () => {
+    if (!zoneId) return;
+    window.location.hash = `#/beat/${zoneId}`;
   };
 
   const idx = index.value % Math.max(1, words.value.length);
@@ -157,6 +192,14 @@ export function DrillSession({ configOverride, onExit }: DrillSessionProps) {
         }
       }}
     >
+      {/* Zone context label (only when launched from the world map) */}
+      {zoneName.value && (
+        <div class="drill__zone-label" aria-live="polite">
+          <span class="drill__zone-label-prefix">Zone:</span>
+          <span class="drill__zone-label-name">{zoneName.value}</span>
+        </div>
+      )}
+
       {/* Corner controls (teacher-facing, low visual weight) */}
       <nav class="drill__corner" aria-label="Session controls">
         <button
@@ -168,15 +211,27 @@ export function DrillSession({ configOverride, onExit }: DrillSessionProps) {
         >
           Shuffle
         </button>
-        <button
-          type="button"
-          class="drill__corner-btn"
-          onClick={(e) => { e.stopPropagation(); handleTeacher(); }}
-          aria-label="Open teacher panel"
-          title="Teacher"
-        >
-          Teacher
-        </button>
+        {zoneId ? (
+          <button
+            type="button"
+            class="drill__corner-btn drill__corner-btn--boss"
+            onClick={(e) => { e.stopPropagation(); handleBossChallenge(); }}
+            aria-label="Try the boss challenge"
+            title="Try the boss"
+          >
+            Boss
+          </button>
+        ) : (
+          <button
+            type="button"
+            class="drill__corner-btn"
+            onClick={(e) => { e.stopPropagation(); handleTeacher(); }}
+            aria-label="Open teacher panel"
+            title="Teacher"
+          >
+            Teacher
+          </button>
+        )}
         <button
           type="button"
           class="drill__corner-btn"

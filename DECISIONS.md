@@ -110,3 +110,24 @@ Append-only. Agents propose. Coordinator ratifies.
 - Mastery tracking via Learn is de-emphasized — the drill loop doesn't auto-record success/failure. Mastery progression now flows primarily through Beat Mode boss levels (still teacher-judged).
 - Two separate interaction models coexist: flash-and-mask drill (Learn) and pattern/oddball with end-of-sequence judgment (Beat Mode). Each serves a different purpose.
 - The ORP highlighting and variable-timing duration rules from M1/M2 are kept in the engine but become *optional* — teacher panel defaults to clean flash-and-mask with a flat duration, with per-zone or per-preset opt-ins for the fancier behaviors later.
+
+---
+
+## ADR-009 · Zone-Aware Drill Integration
+
+**Date:** 2026-04-16
+**Status:** Ratified
+**Context:** ADR-008 introduced the flash-and-mask drill at `#/drill` with a teacher-configurable word list, but the world map's zone entry still routed to the older `#/learn/:zoneId` presentation-and-reveal session. This created two inconsistent interaction models on the same app: the gamified journey (world → zone → old LearnSession with Correct/Try-again) and the drill loop (teacher panel → drill). Teachers testing the app would see the zone journey and learn a different muscle memory than the one the app actually optimizes for.
+**Decision:**
+1. World map zones now route to `#/drill/:zoneId`, which loads the flash-and-mask drill preloaded with that zone's phonemes.
+2. Add `#/drill/:zoneId` route alongside `#/drill`. With a zone id, DrillSession uses the zone's phonemes as a per-session override (does NOT write to localStorage, preserving the teacher's custom list).
+3. Retain the standalone `#/drill` for custom-list sessions configured via the Teacher Panel.
+4. The old `#/learn/:zoneId` LearnSession route is removed from the app router. The code stays on disk under `src/stages/learn/LearnSession.tsx` so nothing breaks and the history is preserved for a V2 revival if we want the per-card judgment mode back, but it's no longer reachable via any UI path.
+5. The drill renders a small zone context label when launched with a zoneId so the child (and teacher) know which zone they're in.
+6. Unlock logic simplifies: zones progress via Beat Mode boss passes only. The old LearnSession mastery writes are no longer the primary driver. Zone statuses flow locked → available → completed (via boss unlockZone), skipping the "in-progress" state unless phonemes were attempted via the now-retired LearnSession path.
+**Consequences:**
+- One interaction model across both entry paths (teacher panel custom list, world map zone).
+- Teachers get zone context "for free" — clicking a zone on the map loads its phonemes without manual textarea copy-paste.
+- The world map remains the gamified journey, the teacher panel remains the classroom-driver surface; the drill loop is the same underneath.
+- LearnSession is dead code but intentionally preserved for now. Add a code comment noting ADR-009.
+- DrillSession now has two inputs: localStorage teacher config (default), or a zoneId prop (override). The prop takes precedence when set.

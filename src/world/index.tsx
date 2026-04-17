@@ -82,7 +82,9 @@ export function WorldRoute({ onNavigate, persistence }: WorldRouteProps) {
   }, []);
 
   const handleZoneSelect = (zoneId: string) => {
-    const target = `#/learn/${zoneId}`;
+    // ADR-009: zones route to the flash-and-mask drill preloaded with
+    // that zone's phonemes (drill loads list from manifest, not localStorage).
+    const target = `#/drill/${zoneId}`;
     if (onNavigate) onNavigate(target);
     else window.location.hash = target;
   };
